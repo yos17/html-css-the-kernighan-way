@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 12 — CSS Debug Tool | HTML & CSS: The Kernighan Way</title>
+<style>
+/* ─── debug.css — complete toolkit ─── */
+
+/* 1. Global outline mode — depth-coded colors */
+[debug-outlines] *     { outline: 1px solid hsla(0,   85%, 65%, 0.7) !important; }
+[debug-outlines] * *   { outline: 1px solid hsla(45,  85%, 65%, 0.7) !important; }
+[debug-outlines] * * * { outline: 1px solid hsla(120, 75%, 55%, 0.7) !important; }
+[debug-outlines] * * * * { outline: 1px solid hsla(200, 85%, 65%, 0.7) !important; }
+[debug-outlines] * * * * * { outline: 1px solid hsla(280, 75%, 70%, 0.7) !important; }
+
+/* 2. Layout problems */
+[debug-layout] img:not([alt]) {
+  outline: 4px solid red !important;
+}
+[debug-layout] :empty:not(input):not(hr):not(br):not(img):not(svg):not(path):not(use) {
+  outline: 2px dashed hsla(280, 80%, 65%, 0.8) !important;
+  min-height: 6px !important;
+}
+
+/* 3. Box model overlay */
+.bm-highlight-margin  { background: rgba(255, 165, 0, 0.18) !important; outline: 1px dashed rgba(255,165,0,0.8) !important; }
+.bm-highlight-padding { background: rgba(0, 200, 100, 0.18) !important; outline: 1px dashed rgba(0,200,100,0.8) !important; }
+.bm-highlight-border  { outline: 3px solid rgba(255, 100, 100, 0.9) !important; }
+.bm-highlight-content { background: rgba(100, 150, 255, 0.2) !important; }
+
+/* ─── Base styles ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d0d1a;
+  --bg-card:  #13132a;
+  --bg-panel: #1a1a35;
+  --text:     #c8c8d8;
+  --dim:      #7a7a9a;
+  --accent:   #a8d8ea;
+  --accent-2: #e8b4b8;
+  --accent-3: #b4e8b8;
+  --border:   #2a2a4a;
+  --mono:     'Courier New', monospace;
+  --r:        6px;
+}
+
+html { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.6; }
+body { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+h1 { color: var(--accent); font-size: 22px; margin-bottom: 4px; }
+h2 { color: var(--accent); font-size: 15px; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+h3 { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
+p  { color: var(--dim); font-size: 13px; margin-bottom: 10px; }
+code { color: var(--accent); font-size: 12px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.subtitle { color: var(--dim); font-size: 13px; margin-bottom: 28px; }
+
+/* Toolbar */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tool-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--dim);
+  font-family: var(--mono); font-size: 11px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tool-btn.on {
+  background: rgba(168,216,234,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tool-btn .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; opacity: 0.5;
+}
+.tool-btn.on .dot { opacity: 1; }
+
+.toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+/* Inspector panel (injected by JS) */
+#inspector-panel {
+  position: fixed;
+  z-index: 2147483647;
+  width: 290px;
+  max-height: 75vh;
+  overflow-y: auto;
+  background: #0a0a18;
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+  pointer-events: none;
+  display: none;
+}
+#inspector-panel.visible { display: block; }
+.insp-header {
+  background: rgba(168,216,234,0.1);
+  border-bottom: 1px solid rgba(168,216,234,0.2);
+  padding: 6px 10px;
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.insp-section { border-bottom: 1px solid var(--border); padding: 8px 10px; }
+.insp-section:last-child { border-bottom: none; }
+.insp-label { color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.insp-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+.insp-key { color: var(--dim); flex-shrink: 0; }
+.insp-val { color: var(--text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insp-ctx-yes { color: var(--accent); }
+.insp-ctx-no  { color: var(--dim); }
+.insp-reason  { color: var(--accent-2); font-size: 10px; }
+
+/* Box model visualizer */
+.bm-outer {
+  display: inline-block;
+  background: rgba(255,165,0,0.12);
+  border: 1px dashed rgba(255,165,0,0.5);
+  padding: 12px;
+  border-radius: 4px;
+}
+.bm-border-box {
+  background: rgba(255,100,100,0.12);
+  border: 2px solid rgba(255,100,100,0.6);
+  padding: 10px;
+  border-radius: 2px;
+}
+.bm-padding-box {
+  background: rgba(0,200,100,0.12);
+  border: 1px dashed rgba(0,200,100,0.6);
+  padding: 10px;
+}
+.bm-content-box {
+  background: rgba(100,150,255,0.2);
+  border: 1px solid rgba(100,150,255,0.4);
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--accent);
+  text-align: center;
+}
+.bm-legend {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px;
+  font-size: 11px;
+}
+.bm-legend-item { display: flex; align-items: center; gap: 5px; }
+.bm-legend-swatch {
+  width: 14px; height: 14px; border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Sample layouts for debug demos */
+.demo-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  position: relative;
+}
+
+/* Collapsed height demo */
+.collapse-parent {
+  background: rgba(168,216,234,0.05);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 8px;
+}
+.collapse-child {
+  background: rgba(168,216,234,0.15);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  margin-top: 30px;  /* this will escape the parent */
+  padding: 10px;
+  font-size: 12px;
+}
+
+/* Overflow demo */
+.overflow-parent {
+  width: 200px;
+  overflow: hidden;
+  background: rgba(168,216,234,0.05);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 4px;
+}
+.overflow-child {
+  width: 400px;
+  background: rgba(168,216,234,0.15);
+  border: 1px solid var(--accent);
+  padding: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Z-index demo */
+.zindex-stage {
+  position: relative;
+  height: 120px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.zbox {
+  position: absolute;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 11px;
+  border: 1px solid;
+}
+
+/* Stacking context trap demo */
+.sc-trap-outer {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 4px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.sc-container-bad {
+  position: relative;
+  width: 120px;
+}
+.sc-container-bad.has-transform {
+  transform: translateZ(0);  /* accidentally creates stacking context */
+}
+.sc-box {
+  position: relative;
+  width: 100px;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+.sc-overlap {
+  position: absolute;
+  top: 20px;
+  left: 60px;
+  width: 100px;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Margin collapse demo */
+.mc-parent {
+  background: rgba(168,216,234,0.05);
+  border: 1px dashed rgba(168,216,234,0.2);
+  padding: 0 8px;  /* no top/bottom padding to demo collapse */
+  border-radius: 4px;
+}
+.mc-child {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  background: rgba(168,216,234,0.1);
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+/* Spec badge */
+.spec-badge {
+  display: inline-flex; gap: 3px; align-items: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.spec-part {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.spec-id    { background: rgba(232,180,184,0.2); color: var(--accent-2); }
+.spec-class { background: rgba(168,216,234,0.2); color: var(--accent); }
+.spec-elem  { background: rgba(180,232,184,0.2); color: var(--accent-3); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+
+<h1>Chapter 12 — CSS Debug Tool</h1>
+<p class="subtitle">debug.css — outlines, box model visualization, stacking contexts, and a live inspector</p>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <span style="font-size:11px;color:var(--dim)">Debug:</span>
+
+  <button class="tool-btn" id="btn-outlines" onclick="toggleOutlines()">
+    <span class="dot"></span> Outlines
+  </button>
+  <button class="tool-btn" id="btn-layout" onclick="toggleLayout()">
+    <span class="dot"></span> Layout
+  </button>
+  <button class="tool-btn" id="btn-inspector" onclick="toggleInspector()">
+    <span class="dot"></span> Inspector
+  </button>
+  <button class="tool-btn" id="btn-zmap" onclick="toggleZMap()">
+    <span class="dot"></span> Z-Map
+  </button>
+  <button class="tool-btn" id="btn-bfc" onclick="toggleBFC()">
+    <span class="dot"></span> BFC
+  </button>
+
+  <div class="toolbar-sep"></div>
+
+  <button class="tool-btn" onclick="clearAll()" style="color:var(--accent-2)">
+    Clear All
+  </button>
+
+  <span id="toolbar-status" style="font-size:11px;color:var(--dim);margin-left:auto"></span>
+</div>
+
+<!-- Inspector panel (positioned by JS) -->
+<div id="inspector-panel">
+  <div class="insp-header">CSS Inspector</div>
+  <div id="inspector-content"></div>
+</div>
+
+<!-- ─── Section 1: Outline Debug ─── -->
+<h2>1. The Classic Pattern — Depth-Coded Outlines</h2>
+<p>Toggle "Outlines" in the toolbar above. Each DOM depth level gets a different color — red at depth 1, yellow at 2, green at 3, blue at 4, violet at 5+. The key: use <code>outline</code> not <code>border</code> — outline does not affect layout.</p>
+
+<div class="card" id="outline-demo-area">
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div style="padding:12px;background:var(--bg-panel);border-radius:4px">
+      <span style="display:block;margin-bottom:6px;font-size:12px">Depth 2</span>
+      <div style="padding:8px;background:rgba(168,216,234,0.08)">
+        <span style="font-size:11px;color:var(--dim)">Depth 3</span>
+        <div style="padding:6px;margin-top:4px">
+          <span style="font-size:11px;color:var(--dim)">Depth 4</span>
+          <span style="display:inline-block;padding:3px 6px;background:rgba(168,216,234,0.15);font-size:10px">Depth 5</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;padding:12px;background:var(--bg-panel);border-radius:4px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="width:40px;height:40px;background:rgba(168,216,234,0.1);border-radius:4px"></div>
+        <div style="flex:1">
+          <div style="height:10px;background:rgba(168,216,234,0.1);border-radius:2px;margin-bottom:4px"></div>
+          <div style="height:8px;background:rgba(168,216,234,0.06);border-radius:2px;width:70%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 2: Box Model Visualizer ─── -->
+<h2>2. Box Model Visualization</h2>
+<p>The browser has three widths. Confusing them is the source of many layout bugs.</p>
+
+<div class="card">
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+    <div>
+      <div class="bm-outer">
+        <div style="font-size:9px;color:rgba(255,165,0,0.8);margin-bottom:4px">margin</div>
+        <div class="bm-border-box">
+          <div style="font-size:9px;color:rgba(255,100,100,0.9);margin-bottom:4px">border</div>
+          <div class="bm-padding-box">
+            <div style="font-size:9px;color:rgba(0,200,100,0.9);margin-bottom:4px">padding</div>
+            <div class="bm-content-box">
+              content<br>
+              <span style="font-size:9px;color:var(--dim)">offsetWidth - border - padding</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bm-legend">
+        <div class="bm-legend-item"><div class="bm-legend-swatch" style="background:rgba(255,165,0,0.3);border-color:rgba(255,165,0,0.5)"></div><span style="font-size:10px;color:var(--dim)">margin</span></div>
+        <div class="bm-legend-item"><div class="bm-legend-swatch" style="background:rgba(255,100,100,0.2);border-color:rgba(255,100,100,0.6)"></div><span style="font-size:10px;color:var(--dim)">border</span></div>
+        <div class="bm-legend-item"><div class="bm-legend-swatch" style="background:rgba(0,200,100,0.2);border-color:rgba(0,200,100,0.5)"></div><span style="font-size:10px;color:var(--dim)">padding</span></div>
+        <div class="bm-legend-item"><div class="bm-legend-swatch" style="background:rgba(100,150,255,0.3);border-color:rgba(100,150,255,0.5)"></div><span style="font-size:10px;color:var(--dim)">content</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:12px;margin-bottom:12px;color:var(--accent)">Live measurements</div>
+      <div id="bm-target" style="width:180px;padding:20px 16px;margin:16px;background:rgba(168,216,234,0.08);border:3px solid rgba(168,216,234,0.3);border-radius:4px;font-size:11px;text-align:center;cursor:pointer" onclick="measureTarget(this)">
+        Click me to measure
+      </div>
+      <div id="bm-readout" style="font-size:11px;color:var(--dim)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 3: Broken Layouts to Debug ─── -->
+<h2>3. Common CSS Bugs — Enable Tools to Diagnose</h2>
+
+<div class="grid-2">
+  <!-- Margin collapse bug -->
+  <div class="demo-section">
+    <h3>Margin Collapse</h3>
+    <p style="font-size:11px">Parent has no padding/border. Child's margin-top "escapes" the parent.</p>
+    <div class="collapse-parent" id="collapse-demo">
+      <div class="collapse-child">I have margin-top: 30px — but it escaped the parent!</div>
+    </div>
+    <button onclick="fixCollapse()" class="tool-btn" style="margin-top:10px">Toggle Fix (overflow:hidden)</button>
+  </div>
+
+  <!-- Overflow clip bug -->
+  <div class="demo-section">
+    <h3>Overflow Clipping</h3>
+    <p style="font-size:11px">Child is 400px wide; parent is 200px with overflow:hidden. Content is clipped.</p>
+    <div class="overflow-parent" id="overflow-demo">
+      <div class="overflow-child">This content is 400px wide but clipped by overflow:hidden on parent</div>
+    </div>
+    <button onclick="fixOverflow()" class="tool-btn" style="margin-top:10px">Toggle overflow</button>
+  </div>
+</div>
+
+<!-- Z-index stacking context trap -->
+<div class="demo-section" style="margin-top:16px">
+  <h3>Stacking Context Trap</h3>
+  <p style="font-size:11px">The blue box has z-index:100, but it is trapped inside a stacking context created by <code>transform: translateZ(0)</code> on its parent. It cannot appear above the orange box in the root context.</p>
+
+  <div class="sc-trap-outer">
+    <div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:6px">❌ With transform (trapped)</div>
+      <div style="position:relative;width:160px;height:100px">
+        <div id="sc-bad-container" style="position:relative;transform:translateZ(0);width:110px">
+          <div style="position:relative;z-index:100;background:rgba(100,150,255,0.3);border:1px solid rgba(100,150,255,0.7);padding:10px;border-radius:4px;font-size:11px;text-align:center;width:110px">
+            z-index:100<br>
+            <span style="font-size:10px;color:var(--dim)">(trapped in context)</span>
+          </div>
+        </div>
+        <div style="position:absolute;top:20px;left:60px;z-index:2;background:rgba(232,180,184,0.3);border:1px solid rgba(232,180,184,0.7);padding:10px;border-radius:4px;font-size:11px;text-align:center;width:110px">
+          z-index:2<br>
+          <span style="font-size:10px;color:var(--dim)">(root context)</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:6px">✓ Without transform (free)</div>
+      <div style="position:relative;width:160px;height:100px">
+        <div style="position:relative;width:110px">
+          <div style="position:relative;z-index:100;background:rgba(100,150,255,0.3);border:1px solid rgba(100,150,255,0.7);padding:10px;border-radius:4px;font-size:11px;text-align:center;width:110px">
+            z-index:100<br>
+            <span style="font-size:10px;color:var(--dim)">(free to escape)</span>
+          </div>
+        </div>
+        <div style="position:absolute;top:20px;left:60px;z-index:2;background:rgba(232,180,184,0.3);border:1px solid rgba(232,180,184,0.7);padding:10px;border-radius:4px;font-size:11px;text-align:center;width:110px">
+          z-index:2<br>
+          <span style="font-size:10px;color:var(--dim)">(root context)</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;color:var(--accent);margin-bottom:6px">Stacking context creators:</div>
+      <div style="font-size:11px;color:var(--dim);line-height:2">
+        opacity &lt; 1<br>
+        transform ≠ none<br>
+        filter ≠ none<br>
+        isolation: isolate<br>
+        will-change: transform<br>
+        z-index + position<br>
+        position: fixed/sticky
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 4: Inspector Demo ─── -->
+<h2>4. Hover Inspector</h2>
+<p>Enable "Inspector" in the toolbar, then hover any element on the page. The panel shows box model, dimensions, stacking context, and computed properties.</p>
+
+<div class="card" id="inspect-playground">
+  <h3>Inspector playground — hover these elements</h3>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;align-items:flex-start">
+    <div style="width:120px;height:80px;background:rgba(168,216,234,0.1);border:2px solid var(--accent);border-radius:6px;padding:8px;font-size:11px">
+      Simple div<br>no position
+    </div>
+    <div style="width:120px;height:80px;background:rgba(232,180,184,0.1);border:2px solid var(--accent-2);border-radius:6px;padding:8px;font-size:11px;position:relative;z-index:5">
+      position:relative<br>z-index:5
+    </div>
+    <div style="width:120px;height:80px;background:rgba(180,232,184,0.1);border:2px solid var(--accent-3);border-radius:6px;padding:8px;font-size:11px;transform:rotate(2deg)">
+      transform<br>(stacking ctx!)
+    </div>
+    <div style="width:120px;height:80px;background:rgba(168,216,234,0.06);border:2px solid var(--border);border-radius:6px;padding:8px;font-size:11px;opacity:0.6">
+      opacity:0.6<br>(stacking ctx!)
+    </div>
+    <div style="width:120px;height:80px;background:rgba(168,216,234,0.06);border:2px solid var(--border);border-radius:6px;padding:12px 16px;font-size:11px;overflow:hidden">
+      overflow:hidden<br>(BFC!)
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 5: Specificity Calculator ─── -->
+<h2>5. Specificity Calculator</h2>
+<p>Paste a CSS selector to see its specificity score.</p>
+
+<div class="card">
+  <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <input type="text" id="spec-input" value=".nav .item a:hover"
+      style="flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:6px 10px;border-radius:4px;outline:none"
+      oninput="calcSpec(this.value)"
+      onfocus="this.style.borderColor='var(--accent)'"
+      onblur="this.style.borderColor='var(--border)'">
+    <button class="tool-btn" onclick="calcSpec(document.getElementById('spec-input').value)">Calculate</button>
+  </div>
+
+  <div id="spec-result" style="margin-bottom:12px"></div>
+
+  <h3>Examples</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="tool-btn" onclick="setAndCalc('#id .class element')">  #id .class element</button>
+    <button class="tool-btn" onclick="setAndCalc(':is(.a, #id) h1')">:is(.a, #id) h1</button>
+    <button class="tool-btn" onclick="setAndCalc(':where(.a, #id) h1')">:where(.a, #id) h1</button>
+    <button class="tool-btn" onclick="setAndCalc('.card .title span::before')">.card .title span::before</button>
+  </div>
+</div>
+
+<!-- ─── Section 6: BFC Finder ─── -->
+<h2>6. Block Formatting Context Finder</h2>
+<p>Toggle "BFC" in the toolbar to highlight all BFC-creating elements on the page.</p>
+
+<div class="card">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px">
+    <div style="padding:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px">
+      <div style="color:var(--accent);margin-bottom:4px">overflow:hidden</div>
+      <div class="overflow-trigger" style="overflow:hidden;padding:6px;background:rgba(168,216,234,0.05)">
+        Creates BFC
+      </div>
+    </div>
+    <div style="padding:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px">
+      <div style="color:var(--accent);margin-bottom:4px">display:flex</div>
+      <div style="display:flex;gap:4px;padding:6px;background:rgba(168,216,234,0.05)">
+        <span>Creates</span><span>BFC</span>
+      </div>
+    </div>
+    <div style="padding:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px">
+      <div style="color:var(--accent);margin-bottom:4px">position:absolute</div>
+      <div style="position:relative;padding:6px;background:rgba(168,216,234,0.05)">
+        <div style="position:absolute;top:4px;left:60px;font-size:10px;color:var(--dim)">abs child</div>
+        Creates BFC
+      </div>
+    </div>
+  </div>
+  <div id="bfc-count" style="margin-top:12px;font-size:12px;color:var(--dim)"></div>
+</div>
+
+<!-- ─── Section 7: Rendered Stacking Context Map ─── -->
+<h2>7. Stacking Context Reference</h2>
+
+<div class="card">
+  <pre style="font-size:11px;color:var(--dim);line-height:1.9;overflow-x:auto">
+STACKING CONTEXT CREATORS (complete list)
+──────────────────────────────────────────────────────────────────
+  Property                   When it creates a stacking context
+  ─────────────────────────  ─────────────────────────────────────
+  opacity                    any value &lt; 1
+  transform                  any value other than none
+  filter                     any value other than none
+  backdrop-filter            any value
+  perspective                any value other than none
+  clip-path                  any value other than none
+  mask / mask-image          any value
+  isolation                  isolate
+  mix-blend-mode             any value other than normal
+  will-change                transform | opacity | filter | etc.
+  contain                    layout | paint | strict | content
+  z-index                    any value other than auto,
+                             AND position ≠ static
+  position                   fixed or sticky (always)
+──────────────────────────────────────────────────────────────────
+
+COMMON ACCIDENTAL CONTEXTS:
+  transform: translateZ(0)   GPU promotion trick → stacking context
+  will-change: transform     Animation hint → stacking context
+  opacity: 0.99              Fade trick → stacking context
+  filter: blur(0)            "Sharpen" trick → stacking context</pre>
+</div>
+
+<script>
+// ─── Debug tool state ────────────────────────────────────────────────────────
+
+const state = { outlines: false, layout: false, inspector: false, zmap: false, bfc: false };
+
+// ─── Outline mode ────────────────────────────────────────────────────────────
+
+function toggleOutlines() {
+  state.outlines = !state.outlines;
+  document.documentElement.toggleAttribute('debug-outlines', state.outlines);
+  document.getElementById('btn-outlines').classList.toggle('on', state.outlines);
+  updateStatus();
+}
+
+// ─── Layout debug mode ───────────────────────────────────────────────────────
+
+function toggleLayout() {
+  state.layout = !state.layout;
+  document.documentElement.toggleAttribute('debug-layout', state.layout);
+  document.getElementById('btn-layout').classList.toggle('on', state.layout);
+  updateStatus();
+}
+
+// ─── Box model measurer ──────────────────────────────────────────────────────
+
+function measureTarget(el) {
+  const cs = getComputedStyle(el);
+  const readout = document.getElementById('bm-readout');
+  readout.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:8px">
+      <div style="color:var(--dim)">offsetWidth</div>  <div style="color:var(--accent)">${el.offsetWidth}px</div>
+      <div style="color:var(--dim)">clientWidth</div>  <div style="color:var(--accent)">${el.clientWidth}px</div>
+      <div style="color:var(--dim)">scrollWidth</div>  <div style="color:var(--accent)">${el.scrollWidth}px</div>
+      <div style="color:var(--dim)">offsetHeight</div> <div style="color:var(--accent)">${el.offsetHeight}px</div>
+      <div style="color:var(--dim)">padding</div>      <div style="color:var(--accent)">${cs.padding}</div>
+      <div style="color:var(--dim)">border</div>       <div style="color:var(--accent)">${cs.borderWidth}</div>
+      <div style="color:var(--dim)">margin</div>       <div style="color:var(--accent)">${cs.margin}</div>
+      <div style="color:var(--dim)">box-sizing</div>   <div style="color:var(--accent)">${cs.boxSizing}</div>
+    </div>
+  `;
+}
+
+// ─── Inspector ───────────────────────────────────────────────────────────────
+
+let lastHovered = null;
+let inspectorListener = null;
+
+function toggleInspector() {
+  state.inspector = !state.inspector;
+  document.getElementById('btn-inspector').classList.toggle('on', state.inspector);
+
+  const panel = document.getElementById('inspector-panel');
+
+  if (state.inspector) {
+    panel.classList.add('visible');
+    inspectorListener = (e) => {
+      const target = e.target;
+      if (target === panel || panel.contains(target)) return;
+      if (target.closest('#toolbar')) return;
+      if (target === lastHovered) return;
+      lastHovered = target;
+      inspectElement(target, e);
+    };
+    document.addEventListener('mousemove', inspectorListener);
+  } else {
+    panel.classList.remove('visible');
+    if (inspectorListener) document.removeEventListener('mousemove', inspectorListener);
+    inspectorListener = null;
+    lastHovered = null;
+  }
+  updateStatus();
+}
+
+function inspectElement(el, e) {
+  const cs = getComputedStyle(el);
+  const rect = el.getBoundingClientRect();
+  const panel = document.getElementById('inspector-panel');
+
+  // Compute stacking context
+  const ctxReasons = [];
+  if (parseFloat(cs.opacity) < 1)           ctxReasons.push(`opacity: ${cs.opacity}`);
+  if (cs.transform !== 'none')               ctxReasons.push('transform');
+  if (cs.filter !== 'none')                  ctxReasons.push(`filter: ${cs.filter.substring(0,20)}`);
+  if (cs.isolation === 'isolate')            ctxReasons.push('isolation: isolate');
+  if (cs.willChange !== 'auto')              ctxReasons.push(`will-change: ${cs.willChange}`);
+  if (cs.position === 'fixed' || cs.position === 'sticky') ctxReasons.push(`position: ${cs.position}`);
+  if (cs.zIndex !== 'auto' && cs.position !== 'static')    ctxReasons.push(`z-index: ${cs.zIndex}`);
+  const isCtx = ctxReasons.length > 0;
+
+  // BFC
+  const bfcReasons = [];
+  if (!['visible','clip'].includes(cs.overflow)) bfcReasons.push(`overflow: ${cs.overflow}`);
+  if (cs.display === 'flow-root')                bfcReasons.push('display: flow-root');
+  if (/^(flex|grid|inline-flex|inline-grid)$/.test(cs.display)) bfcReasons.push(`display: ${cs.display}`);
+  if (['absolute','fixed'].includes(cs.position)) bfcReasons.push(`position: ${cs.position}`);
+  const isBFC = bfcReasons.length > 0;
+
+  // Element selector
+  const tag = el.tagName.toLowerCase();
+  const id  = el.id ? `#${el.id}` : '';
+  const cls = [...el.classList].slice(0,3).map(c=>`.${c}`).join('');
+
+  const mt = parseFloat(cs.marginTop), mr = parseFloat(cs.marginRight);
+  const mb = parseFloat(cs.marginBottom), ml = parseFloat(cs.marginLeft);
+  const pt = parseFloat(cs.paddingTop), pr = parseFloat(cs.paddingRight);
+  const pb = parseFloat(cs.paddingBottom), pl = parseFloat(cs.paddingLeft);
+  const bt = parseFloat(cs.borderTopWidth), bb = parseFloat(cs.borderBottomWidth);
+  const bl2 = parseFloat(cs.borderLeftWidth), br2 = parseFloat(cs.borderRightWidth);
+
+  document.getElementById('inspector-content').innerHTML = `
+    <div class="insp-section">
+      <div class="insp-label">Element</div>
+      <div class="insp-row"><span class="insp-key">&lt;${tag}&gt;</span><span class="insp-val" style="color:var(--accent)">${id}${cls}</span></div>
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-label">Box Model</div>
+      <div class="insp-row"><span class="insp-key">offsetWidth</span>  <span class="insp-val">${el.offsetWidth}px</span></div>
+      <div class="insp-row"><span class="insp-key">offsetHeight</span> <span class="insp-val">${el.offsetHeight}px</span></div>
+      <div class="insp-row"><span class="insp-key">padding</span>      <span class="insp-val">${pt}↑ ${pr}→ ${pb}↓ ${pl}←</span></div>
+      <div class="insp-row"><span class="insp-key">border</span>       <span class="insp-val">${bt}↑ ${br2}→ ${bb}↓ ${bl2}←</span></div>
+      <div class="insp-row"><span class="insp-key">margin</span>       <span class="insp-val">${mt}↑ ${mr}→ ${mb}↓ ${ml}←</span></div>
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-label">Positioning</div>
+      <div class="insp-row"><span class="insp-key">display</span>   <span class="insp-val">${cs.display}</span></div>
+      <div class="insp-row"><span class="insp-key">position</span>  <span class="insp-val">${cs.position}</span></div>
+      <div class="insp-row"><span class="insp-key">z-index</span>   <span class="insp-val">${cs.zIndex}</span></div>
+      <div class="insp-row"><span class="insp-key">float</span>     <span class="insp-val">${cs.float}</span></div>
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-label">Stacking Context</div>
+      <div class="insp-row">
+        <span class="insp-key">creates context</span>
+        <span class="insp-val ${isCtx ? 'insp-ctx-yes' : 'insp-ctx-no'}">${isCtx ? '✓ YES' : 'no'}</span>
+      </div>
+      ${ctxReasons.map(r => `<div class="insp-row"><span class="insp-key"></span><span class="insp-reason">→ ${r}</span></div>`).join('')}
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-label">Block Formatting</div>
+      <div class="insp-row">
+        <span class="insp-key">creates BFC</span>
+        <span class="insp-val ${isBFC ? 'insp-ctx-yes' : 'insp-ctx-no'}">${isBFC ? '✓ YES' : 'no'}</span>
+      </div>
+      ${bfcReasons.map(r => `<div class="insp-row"><span class="insp-key"></span><span class="insp-reason">→ ${r}</span></div>`).join('')}
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-label">Computed</div>
+      <div class="insp-row"><span class="insp-key">color</span>       <span class="insp-val" style="display:flex;gap:4px;align-items:center;justify-content:flex-end"><span style="display:inline-block;width:10px;height:10px;background:${cs.color};border-radius:2px"></span>${cs.color.substring(0,22)}</span></div>
+      <div class="insp-row"><span class="insp-key">background</span>  <span class="insp-val">${cs.backgroundColor.substring(0,22)}</span></div>
+      <div class="insp-row"><span class="insp-key">font-size</span>   <span class="insp-val">${cs.fontSize}</span></div>
+      <div class="insp-row"><span class="insp-key">overflow</span>    <span class="insp-val">${cs.overflow}</span></div>
+    </div>
+  `;
+
+  // Position panel
+  const px = Math.min(e.clientX + 18, window.innerWidth - 308);
+  const py = Math.min(e.clientY + 18, window.innerHeight - 460);
+  panel.style.left = px + 'px';
+  panel.style.top  = py + 'px';
+}
+
+// ─── Z-Index Map ─────────────────────────────────────────────────────────────
+
+let zmapOverlay = null;
+
+function toggleZMap() {
+  state.zmap = !state.zmap;
+  document.getElementById('btn-zmap').classList.toggle('on', state.zmap);
+
+  if (state.zmap) {
+    zmapOverlay = document.createElement('div');
+    zmapOverlay.id = 'zmap-overlay';
+    zmapOverlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483646';
+
+    const els = [...document.querySelectorAll('*')].filter(el => {
+      const cs = getComputedStyle(el);
+      return cs.position !== 'static' && cs.zIndex !== 'auto';
+    });
+
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const z    = parseInt(getComputedStyle(el).zIndex);
+      const col  = z >= 1000 ? '#e74c3c' : z >= 100 ? '#f39c12' : z >= 10 ? '#3498db' : '#888';
+      const badge = document.createElement('div');
+      badge.style.cssText = `
+        position:fixed;
+        left:${Math.max(0, rect.left)}px;
+        top:${Math.max(0, rect.top)}px;
+        background:${col};
+        color:white;
+        font:bold 10px 'Courier New',monospace;
+        padding:1px 5px;
+        border-radius:3px;
+        pointer-events:none;
+        line-height:1.6;
+      `;
+      badge.textContent = `z:${z}`;
+      zmapOverlay.appendChild(badge);
+    });
+
+    document.body.appendChild(zmapOverlay);
+    updateStatus(`z-map: ${els.length} positioned elements`);
+  } else {
+    if (zmapOverlay) { zmapOverlay.remove(); zmapOverlay = null; }
+    updateStatus();
+  }
+}
+
+// ─── BFC Finder ──────────────────────────────────────────────────────────────
+
+let bfcHighlights = [];
+
+function toggleBFC() {
+  state.bfc = !state.bfc;
+  document.getElementById('btn-bfc').classList.toggle('on', state.bfc);
+
+  bfcHighlights.forEach(({ el, orig }) => {
+    el.style.outline = orig.outline;
+  });
+  bfcHighlights = [];
+
+  if (state.bfc) {
+    const all = document.querySelectorAll('*');
+    let count = 0;
+    all.forEach(el => {
+      if (el.closest('#toolbar') || el === document.body || el === document.documentElement) return;
+      const cs = getComputedStyle(el);
+      const isBFC =
+        !['visible','clip'].includes(cs.overflow) ||
+        cs.display === 'flow-root' ||
+        /^(flex|grid|inline-flex|inline-grid)$/.test(cs.display) ||
+        ['absolute','fixed'].includes(cs.position) ||
+        cs.float !== 'none';
+      if (isBFC) {
+        const orig = { outline: el.style.outline };
+        bfcHighlights.push({ el, orig });
+        el.style.outline = '2px solid rgba(180,232,184,0.8)';
+        count++;
+      }
+    });
+    document.getElementById('bfc-count').textContent = `Found ${count} BFC-creating elements (highlighted in green)`;
+    updateStatus(`BFC: ${count} found`);
+  } else {
+    document.getElementById('bfc-count').textContent = '';
+    updateStatus();
+  }
+}
+
+// ─── Clear all ────────────────────────────────────────────────────────────────
+
+function clearAll() {
+  if (state.outlines) toggleOutlines();
+  if (state.layout)   toggleLayout();
+  if (state.inspector) toggleInspector();
+  if (state.zmap)     toggleZMap();
+  if (state.bfc)      toggleBFC();
+}
+
+// ─── Broken layout fixes ─────────────────────────────────────────────────────
+
+let collapseFixed = false;
+function fixCollapse() {
+  collapseFixed = !collapseFixed;
+  const parent = document.getElementById('collapse-demo');
+  parent.style.overflow = collapseFixed ? 'hidden' : '';
+  parent.style.borderColor = collapseFixed ? 'var(--accent-3)' : '';
+}
+
+let overflowFixed = false;
+function fixOverflow() {
+  overflowFixed = !overflowFixed;
+  const parent = document.getElementById('overflow-demo');
+  parent.style.overflow = overflowFixed ? 'auto' : 'hidden';
+}
+
+// ─── Specificity Calculator ───────────────────────────────────────────────────
+
+function calcSpec(selector) {
+  if (!selector.trim()) return;
+
+  let s = selector;
+  let a = 0, b = 0, c = 0;
+
+  // Remove :where() — always 0
+  s = s.replace(/:where\([^)]*\)/g, '___where___');
+
+  // :is() and :not() — take max specificity of arguments
+  const isMatches = [...s.matchAll(/:(?:is|not)\(([^)]+)\)/g)];
+  for (const m of isMatches) {
+    const inner = simpleCalc(m[1]);
+    a += inner[0]; b += inner[1]; c += inner[2];
+  }
+  s = s.replace(/:(?:is|not)\([^)]*\)/g, '');
+  s = s.replace(/___where___/g, '');
+
+  const base = simpleCalc(s);
+  a += base[0]; b += base[1]; c += base[2];
+
+  const total = a * 100 + b * 10 + c;
+
+  document.getElementById('spec-result').innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <code style="color:var(--dim)">${selector}</code>
+      <span style="color:var(--dim)">→</span>
+      <div class="spec-badge">
+        <span class="spec-part spec-id">${a}</span>
+        <span style="color:var(--dim);font-size:10px">,</span>
+        <span class="spec-part spec-class">${b}</span>
+        <span style="color:var(--dim);font-size:10px">,</span>
+        <span class="spec-part spec-elem">${c}</span>
+      </div>
+      <span style="font-size:11px;color:var(--dim)">= ${total}</span>
+      <span style="font-size:10px;color:var(--dim)">[<span style="color:var(--accent-2)">id</span>, <span style="color:var(--accent)">class</span>, <span style="color:var(--accent-3)">element</span>]</span>
+    </div>
+  `;
+}
+
+function simpleCalc(s) {
+  let a = 0, b = 0, c = 0;
+  // IDs
+  const ids = s.match(/#[\w-]+/g) || [];
+  a += ids.length;
+  s = s.replace(/#[\w-]+/g, '');
+  // Classes, attrs, pseudo-classes (not pseudo-elements)
+  const classes = s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+(?:\([^)]*\))?/g) || [];
+  b += classes.length;
+  s = s.replace(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+(?:\([^)]*\))?/g, '');
+  // Elements and pseudo-elements
+  const elems = s.match(/(?<![#.\[\]])(?:^|[\s>~+])([a-zA-Z][\w-]*)|::[\w-]+/g) || [];
+  c += elems.filter(e => e.trim() !== '*').length;
+  return [a, b, c];
+}
+
+function setAndCalc(sel) {
+  document.getElementById('spec-input').value = sel;
+  calcSpec(sel);
+}
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+
+function updateStatus(msg) {
+  const active = Object.entries(state).filter(([,v]) => v).map(([k]) => k);
+  const el = document.getElementById('toolbar-status');
+  if (msg) { el.textContent = msg; return; }
+  el.textContent = active.length ? 'Active: ' + active.join(', ') : '';
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+calcSpec('.nav .item a:hover');
+</script>
+</body>
+</html>

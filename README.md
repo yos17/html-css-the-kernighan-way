@@ -6,56 +6,64 @@
 
 ## What This Book Is
 
-This book is for beginners.
+This book is a beginner-friendly introduction to HTML and CSS.
 
-If HTML and CSS still feel confusing, that is normal. The web has many small rules, and most tutorials throw too much at you at once. This book takes the opposite approach: one file, one idea, one working result at a time.
+The web can feel confusing at first because many tutorials throw too much at you too early. This book does the opposite. Each chapter builds one small, working page or tool. You read a little, change the code, refresh the browser, and see what happened.
 
-You will learn by building pages in the browser, not by memorizing long lists of tags and properties.
+The point is not to memorize everything. The point is to build enough small things that HTML and CSS stop feeling mysterious.
 
-## How This Book Works
+## How to Use This Book
 
-Each chapter builds one small tool or system:
+Each chapter follows the same pattern:
 
-1. we start with the problem
-2. we build the simplest version that works
-3. we improve it step by step
-4. we explain what each new line is doing
+1. start with a real problem
+2. build the simplest version that works
+3. improve it one step at a time
+4. explain the code in plain language
 
-The goal is not to impress you with clever CSS. The goal is to make the code readable enough that you can change it yourself.
+Keep the browser open while you read. Change values. Break things on purpose. Then fix them.
 
 ## What You Need
 
-Only two things:
+Only two tools:
 
-1. **A browser**
-2. **A text editor** like VS Code
+1. a web browser
+2. a text editor such as VS Code
 
-No build tools. No npm. No frameworks. Each example is a single `.html` file you can open directly in a browser.
+No npm. No frameworks. No build tools. Every chapter uses a single `.html` file you can open directly in the browser.
 
-## The Main Learning Path
+## The Book
 
-Right now this repository has some rough edges and overlapping chapter folders. For a beginner, use this path first:
+| Chapter | Title | What You Build | What You Learn |
+|---------|-------|----------------|----------------|
+| 1 | [Build Your Own CSS Reset](chapters/01_css_reset/) | A clean starting stylesheet | What HTML is, what CSS is, browser defaults, box sizing |
+| 2 | [Build Your Own Type Scale](chapters/02_type_scale/) | A readable text system | `rem`, `clamp()`, text sizing, line height |
+| 3 | [Build Your Own Color System](chapters/03_color_system/) | A reusable color palette | HSL, custom properties, semantic color tokens |
+| 4 | [Build Your Own Layout Engine](chapters/04_layout_engine/) | A small flexbox + grid utility set | layout axes, alignment, spacing, grid columns |
+| 5 | [Build Your Own Animation Library](chapters/07_animations/) | Reusable motion classes | transitions, keyframes, transforms |
+| 6 | [Build Your Own Form Framework](chapters/08_forms/) | Better-looking, more usable forms | labels, inputs, focus, validation |
+| 7 | [Build Your Own CSS Debug Tool](chapters/12_debug/) | A visual CSS debugging toolkit | box model debugging, overflow, stacking, diagnosis |
 
-| Chapter | Title | What You Learn |
-|---------|-------|----------------|
-| 1 | [Build Your Own CSS Reset](chapters/01_css_reset/) | What HTML is, what CSS is, and why browsers add default styles |
-| 2 | [Build Your Own Type Scale](chapters/02_type_scale/) | How text size works, and why `rem` is better than fixed pixels |
-| 3 | [Build Your Own Color System](chapters/03_color_system/) | How to choose and organize colors without guessing every value |
-| 4 | [Build Your Own Layout Engine](chapters/04_layout_engine/) | How flexbox and grid place elements on a page |
-| 7 | [Build Your Own Animation Library](chapters/07_animations/) | How transitions and keyframes create motion |
-| 8 | [Build Your Own Form Framework](chapters/08_forms/) | How to build forms that are clear and usable |
-| 12 | [Build Your Own CSS Debug Tool](chapters/12_debug/) | How to inspect layout and fix CSS problems systematically |
+## Chapter Order
 
-## Before You Start
+The order matters.
 
-If you are brand new, keep these ideas in mind:
+- Chapter 1 gives you the HTML and CSS basics.
+- Chapters 2 and 3 make text and color consistent.
+- Chapter 4 explains layout, which is where most beginners get stuck.
+- Chapters 5 and 6 add polish and practical UI work.
+- Chapter 7 teaches you how to debug when CSS goes wrong.
 
-- **HTML** says what something is
-- **CSS** says how it looks
-- the browser already applies some default styles
-- most CSS becomes easier once you can see the box model, spacing, and layout axes clearly
+## If You Are Completely New
 
-You do not need to understand everything on the first read. Open the HTML files, change values, and watch what happens.
+Remember these four ideas:
+
+- **HTML** describes what something is
+- **CSS** describes how it looks
+- the browser already applies default styles
+- small experiments teach faster than long explanations
+
+You do not need to understand every line on the first pass.
 
 ## Getting Started
 
@@ -64,13 +72,12 @@ git clone https://github.com/yos17/html-css-the-kernighan-way.git
 cd html-css-the-kernighan-way
 ```
 
-Then start here:
+Then:
 
-- read `chapters/01_css_reset/README.md`
+- read Chapter 1
 - open the chapter HTML file in your browser
 - change one thing at a time
-
-That is the whole method.
+- keep going forward
 
 ---
 

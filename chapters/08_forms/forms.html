@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 8 — Form Framework Showcase</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0d1a;
+    --bg2:      #111122;
+    --bg3:      #1a1a2e;
+    --bg4:      #16213e;
+    --text:     #c8c8d8;
+    --text-dim: #7878a0;
+    --accent:   #a8d8ea;
+    --accent2:  #e8a0d8;
+    --accent3:  #a8eac8;
+    --accent4:  #ead8a8;
+    --border:   #2a2a40;
+    --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-pill: 999px;
+    --mono: 'Courier New', monospace;
+
+    /* Form tokens */
+    --form-bg:           #111122;
+    --form-border:       #2a2a40;
+    --form-border-focus: #a8d8ea;
+    --form-border-valid: #16a34a;
+    --form-border-error: #dc2626;
+    --form-text:         #c8c8d8;
+    --form-text-dim:     #7878a0;
+    --form-placeholder:  #4a4a6a;
+    --form-radius:       6px;
+    --form-focus-ring:   0 0 0 3px rgba(168,216,234,0.2);
+    --form-error-ring:   0 0 0 3px rgba(220,38,38,0.15);
+    --focus-outer:       0 0 0 2px #0d0d1a, 0 0 0 4px #a8d8ea;
+  }
+
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 14px; line-height: 1.6;
+  }
+
+  .page { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+
+  h1 { font-size: 1.6rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-dim); margin-bottom: 2.5rem; font-size: 0.875rem; }
+  h2 {
+    font-size: 1rem; color: var(--accent); margin-bottom: 1rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  h3 { font-size: 0.875rem; color: var(--accent2); margin-bottom: 0.75rem; }
+
+  .section { margin-bottom: 3rem; }
+  .divider { height: 1px; background: var(--border); margin: 2.5rem 0; }
+  .chapter-tag { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+  .demo-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 1.5rem;
+  }
+
+  pre {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r-md); padding: 0.875rem 1rem;
+    font-size: 0.775rem; line-height: 1.7; color: #a8c8ff;
+    overflow-x: auto; margin-top: 0.75rem;
+  }
+  .kw { color: #a8d8ea; } .prop { color: #e8a0d8; }
+  .val { color: #a8eac8; } .cmt { color: #555577; }
+  code { color: var(--accent); font-size: 0.85em; }
+  .section-desc { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1.25rem; line-height: 1.6; }
+
+  /* ─── Utility ────────────────────────────────────────── */
+  .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; }
+  .col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.4rem; padding: 0.5rem 1.25rem;
+    font-family: var(--mono); font-size: 0.875rem; font-weight: 500;
+    border: 1px solid transparent; border-radius: var(--r-md);
+    cursor: pointer; user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .btn:focus-visible { outline: none; box-shadow: var(--focus-outer); }
+  .btn--primary   { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .btn--primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+  .btn--secondary { background: var(--bg3); color: var(--text); border-color: var(--border); }
+  .btn--secondary:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .btn--sm { padding: 0.3rem 0.75rem; font-size: 0.775rem; }
+
+  /* ═══════════════════════════════════════════════════════
+     FORM COMPONENTS
+  ═══════════════════════════════════════════════════════ */
+
+  /* ─── Form Group ──────────────────────────────────────── */
+  .form-group {
+    display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 1.25rem;
+  }
+  .form-group:last-child { margin-bottom: 0; }
+
+  /* ─── Labels ──────────────────────────────────────────── */
+  .form-label {
+    font-size: 0.875rem; font-weight: 500; color: var(--form-text); cursor: default;
+  }
+  .form-label--required::after {
+    content: ' *'; color: #f87171; font-weight: 400;
+  }
+
+  /* ─── Inputs ──────────────────────────────────────────── */
+  .form-input,
+  .form-textarea,
+  .form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--form-bg);
+    color: var(--form-text);
+    border: 1px solid var(--form-border);
+    border-radius: var(--form-radius);
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .form-input::placeholder, .form-textarea::placeholder {
+    color: var(--form-placeholder);
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--form-border-focus);
+    box-shadow: var(--form-focus-ring);
+  }
+  .form-input:user-valid, .form-textarea:user-valid {
+    border-color: var(--form-border-valid);
+  }
+  .form-input:user-invalid, .form-textarea:user-invalid {
+    border-color: var(--form-border-error);
+    box-shadow: var(--form-error-ring);
+  }
+  .form-input:disabled, .form-textarea:disabled, .form-select:disabled {
+    opacity: 0.5; cursor: not-allowed; background: #0d0d1a;
+  }
+
+  /* ─── Textarea ────────────────────────────────────────── */
+  .form-textarea { min-height: 96px; resize: vertical; }
+
+  /* ─── Select ──────────────────────────────────────────── */
+  .form-select {
+    padding-right: 2.5rem; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%237878a0' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 0.5rem center;
+  }
+  .form-select option { background: var(--bg3); color: var(--form-text); }
+
+  /* ─── Error / Hint ────────────────────────────────────── */
+  .form-error {
+    font-size: 0.8rem; color: #f87171;
+    display: none; gap: 0.3rem; align-items: flex-start; line-height: 1.4;
+  }
+  .form-input:user-invalid ~ .form-error,
+  .form-textarea:user-invalid ~ .form-error {
+    display: flex;
+  }
+  .form-hint { font-size: 0.775rem; color: var(--form-text-dim); line-height: 1.4; }
+
+  /* ─── Floating Label ──────────────────────────────────── */
+  .form-group--float {
+    position: relative; margin-bottom: 1.25rem;
+  }
+  .form-group--float .form-input {
+    padding-top: 1.25rem; padding-bottom: 0.25rem;
+  }
+  .form-group--float .form-label {
+    position: absolute; left: 0.75rem; top: 0.875rem;
+    font-size: 0.875rem; color: var(--form-placeholder);
+    pointer-events: none; margin: 0;
+    transition: top 0.15s, font-size 0.15s, color 0.15s;
+  }
+  .form-group--float .form-input:not(:placeholder-shown) ~ .form-label,
+  .form-group--float .form-input:focus ~ .form-label {
+    top: 0.25rem; font-size: 0.7rem; color: var(--form-border-focus);
+  }
+
+  /* ─── Custom Checkbox ─────────────────────────────────── */
+  .checkbox-wrapper {
+    display: flex; align-items: flex-start; gap: 0.625rem; cursor: pointer;
+  }
+  .checkbox-input {
+    appearance: none; -webkit-appearance: none;
+    width: 1.125rem; height: 1.125rem; min-width: 1.125rem;
+    background: var(--form-bg);
+    border: 1.5px solid var(--form-border);
+    border-radius: 4px; cursor: pointer; position: relative;
+    transition: background 0.15s, border-color 0.15s;
+    margin-top: 0.15rem; flex-shrink: 0;
+  }
+  .checkbox-input::after {
+    content: ''; position: absolute; display: none;
+    left: 4px; top: 1px; width: 5px; height: 9px;
+    border: 2px solid #fff; border-top: none; border-left: none;
+    transform: rotate(45deg);
+  }
+  .checkbox-input:checked { background: #2563eb; border-color: #2563eb; }
+  .checkbox-input:checked::after { display: block; }
+  .checkbox-input:focus-visible { outline: none; box-shadow: var(--focus-outer); }
+  .checkbox-input:disabled { opacity: 0.45; cursor: not-allowed; }
+  .checkbox-input:disabled ~ .checkbox-label { opacity: 0.45; cursor: not-allowed; }
+  .checkbox-input:hover:not(:disabled):not(:checked) { border-color: var(--accent); }
+
+  .checkbox-label { font-size: 0.875rem; color: var(--form-text); line-height: 1.5; }
+
+  /* ─── Custom Radio ────────────────────────────────────── */
+  .radio-wrapper {
+    display: flex; align-items: flex-start; gap: 0.625rem; cursor: pointer;
+  }
+  .radio-input {
+    appearance: none; -webkit-appearance: none;
+    width: 1.125rem; height: 1.125rem; min-width: 1.125rem;
+    background: var(--form-bg);
+    border: 1.5px solid var(--form-border);
+    border-radius: 50%; cursor: pointer; position: relative;
+    transition: background 0.15s, border-color 0.15s;
+    margin-top: 0.15rem; flex-shrink: 0;
+  }
+  .radio-input::after {
+    content: ''; position: absolute; display: none;
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 6px; height: 6px; background: #fff; border-radius: 50%;
+  }
+  .radio-input:checked { background: #2563eb; border-color: #2563eb; }
+  .radio-input:checked::after { display: block; }
+  .radio-input:focus-visible { outline: none; box-shadow: var(--focus-outer); }
+  .radio-input:hover:not(:disabled):not(:checked) { border-color: var(--accent); }
+  .radio-label { font-size: 0.875rem; color: var(--form-text); line-height: 1.5; }
+
+  /* ─── Toggle Switch ───────────────────────────────────── */
+  .toggle-input {
+    appearance: none; -webkit-appearance: none;
+    position: relative; width: 44px; height: 24px;
+    border-radius: 12px; background: var(--form-border);
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-input::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .toggle-input:checked { background: #2563eb; }
+  .toggle-input:checked::after { transform: translateX(20px); }
+  .toggle-input:focus-visible { outline: none; box-shadow: var(--focus-outer); }
+  .toggle-input:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ─── Fieldset / Legend ───────────────────────────────── */
+  .form-fieldset {
+    border: 1px solid var(--form-border); border-radius: var(--r-lg);
+    padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+  }
+  .form-legend {
+    padding: 0 0.5rem; font-size: 0.875rem; font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ─── Password strength bar ──────────────────────────── */
+  .strength-bar {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 4px;
+    height: 4px; margin-top: 0.5rem;
+  }
+  .strength-segment {
+    background: var(--form-border); border-radius: 2px; transition: background 0.2s;
+  }
+  [data-strength="1"] .strength-segment:nth-child(1)    { background: #dc2626; }
+  [data-strength="2"] .strength-segment:nth-child(-n+2) { background: #ea580c; }
+  [data-strength="3"] .strength-segment:nth-child(-n+3) { background: #ca8a04; }
+  [data-strength="4"] .strength-segment                 { background: #16a34a; }
+
+  /* ─── Search with clear ──────────────────────────────── */
+  .input-wrapper { position: relative; }
+  .input-wrapper .form-input { padding-right: 2.25rem; }
+  .input-clear {
+    position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--form-text-dim); padding: 0.2rem; font-size: 1rem;
+    line-height: 1; opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  }
+  .search-field:not(:placeholder-shown) ~ .input-clear {
+    opacity: 1; pointer-events: auto;
+  }
+
+  /* ─── Full contact form ──────────────────────────────── */
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+  }
+  .contact-grid .form-group { margin-bottom: 0; }
+  .contact-grid .full-width { grid-column: 1 / -1; }
+  .contact-grid .form-actions {
+    grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.75rem;
+  }
+  @media (max-width: 600px) {
+    .contact-grid { grid-template-columns: 1fr; }
+    .contact-grid .full-width,
+    .contact-grid .form-actions { grid-column: 1; }
+  }
+
+  /* ─── State display ───────────────────────────────────── */
+  .state-tag {
+    font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 3px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text-dim); margin-bottom: 0.4rem; display: inline-block;
+  }
+  .state-tag.valid   { color: var(--accent3); border-color: var(--accent3); background: rgba(168,234,200,0.1); }
+  .state-tag.invalid { color: #f87171;        border-color: #7f1d1d;        background: rgba(220,38,38,0.1); }
+  .state-tag.focus   { color: var(--accent);  border-color: var(--accent);  background: rgba(168,216,234,0.1); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="chapter-tag">HTML &amp; CSS: The Kernighan Way</div>
+  <h1>Chapter 8 — Form Framework</h1>
+  <p class="subtitle">Labels, validation states, custom controls, floating labels, and full accessibility — all in one demo.</p>
+
+  <!-- ─── 1: Label / Input Association ──────────────────── -->
+  <div class="section">
+    <h2>1. Label / Input Association</h2>
+    <p class="section-desc">
+      The <code>for</code>/<code>id</code> connection is the most important form primitive.
+      Click any label text to see the input receive focus.
+    </p>
+
+    <div class="demo-box">
+      <div class="col-2">
+        <div>
+          <div class="form-group">
+            <label class="form-label form-label--required" for="name-demo">Full Name</label>
+            <input class="form-input" type="text" id="name-demo" name="name"
+                   placeholder="Alice Smith" autocomplete="name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label form-label--required" for="email-demo">Email Address</label>
+            <input class="form-input" type="email" id="email-demo" name="email"
+                   placeholder="alice@example.com" autocomplete="email" required>
+            <div class="form-hint">We'll never share your email.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone-demo">Phone</label>
+            <input class="form-input" type="tel" id="phone-demo" name="phone"
+                   placeholder="+1 (555) 000-0000" autocomplete="tel">
+          </div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label" for="number-demo">Age</label>
+            <input class="form-input" type="number" id="number-demo"
+                   min="1" max="120" placeholder="30">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="date-demo">Date of Birth</label>
+            <input class="form-input" type="date" id="date-demo"
+                   style="color-scheme:dark;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="select-demo">Country</label>
+            <select class="form-select" id="select-demo">
+              <option value="" disabled selected>Select a country…</option>
+              <option>United States</option>
+              <option>United Kingdom</option>
+              <option>Canada</option>
+              <option>Australia</option>
+              <option>Germany</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="textarea-demo">Notes</label>
+            <textarea class="form-textarea" id="textarea-demo" rows="3"
+                      placeholder="Optional notes…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* click the label text → input gets focus */</span>
+&lt;<span class="kw">label</span> <span class="prop">for</span>="<span class="val">email</span>"&gt;Email&lt;/label&gt;
+&lt;<span class="kw">input</span> <span class="prop">type</span>="<span class="val">email</span>" <span class="prop">id</span>="<span class="val">email</span>" <span class="prop">required</span> <span class="prop">autocomplete</span>="<span class="val">email</span>"&gt;</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 2: Validation States ──────────────────────────── -->
+  <div class="section">
+    <h2>2. Validation States</h2>
+    <p class="section-desc">
+      Type in the fields, then move away. <code>:user-valid</code> and <code>:user-invalid</code> only activate after interaction — not on page load.
+    </p>
+
+    <div class="demo-box">
+      <div class="col-2">
+        <div>
+          <div class="form-group" id="validationEmailGroup">
+            <label class="form-label form-label--required" for="val-email">Email</label>
+            <input class="form-input" type="email" id="val-email"
+                   placeholder="you@example.com" required>
+            <div class="form-error">
+              <span>✕</span><span>Please enter a valid email address.</span>
+            </div>
+            <div id="val-email-state" class="state-tag">not interacted</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required" for="val-url">Website URL</label>
+            <input class="form-input" type="url" id="val-url"
+                   placeholder="https://example.com" required>
+            <div class="form-error">
+              <span>✕</span><span>Must be a valid URL starting with https://</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label form-label--required" for="val-pattern">Username</label>
+            <input class="form-input" type="text" id="val-pattern"
+                   placeholder="only_letters_numbers" required
+                   pattern="[a-z0-9_]{3,16}"
+                   minlength="3" maxlength="16">
+            <div class="form-error">
+              <span>✕</span><span>3–16 characters: lowercase letters, numbers, underscores only.</span>
+            </div>
+            <div class="form-hint">3–16 chars: a-z, 0-9, underscore</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required" for="val-min">Score (1–100)</label>
+            <input class="form-input" type="number" id="val-min"
+                   min="1" max="100" required placeholder="42">
+            <div class="form-error">
+              <span>✕</span><span>Enter a number between 1 and 100.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* :user-invalid — only after the user has interacted */</span>
+<span class="prop">.form-input</span>:user-invalid {
+  <span class="kw">border-color</span>: <span class="val">#dc2626</span>;
+  <span class="kw">box-shadow</span>: <span class="val">0 0 0 3px rgba(220, 38, 38, 0.15)</span>;
+}
+
+<span class="cmt">/* Show sibling error message using ~ combinator */</span>
+<span class="prop">.form-input</span>:user-invalid ~ <span class="prop">.form-error</span> {
+  <span class="kw">display</span>: <span class="val">flex</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 3: Floating Labels ────────────────────────────── -->
+  <div class="section">
+    <h2>3. Floating Labels</h2>
+    <p class="section-desc">
+      Click a field to see the label float to the top. Uses <code>:placeholder-shown</code> — no JavaScript.
+      The label must appear after the input in the HTML for the <code>~</code> sibling selector to work.
+    </p>
+
+    <div class="demo-box">
+      <div class="col-2">
+        <div>
+          <div class="form-group--float">
+            <input class="form-input" type="text" id="fl-name"
+                   placeholder=" " autocomplete="name">
+            <label class="form-label" for="fl-name">Full Name</label>
+          </div>
+          <div class="form-group--float">
+            <input class="form-input" type="email" id="fl-email"
+                   placeholder=" " autocomplete="email">
+            <label class="form-label" for="fl-email">Email Address</label>
+          </div>
+        </div>
+        <div>
+          <div class="form-group--float">
+            <input class="form-input" type="tel" id="fl-phone"
+                   placeholder=" " autocomplete="tel">
+            <label class="form-label" for="fl-phone">Phone Number</label>
+          </div>
+          <div class="form-group--float">
+            <input class="form-input" type="text" id="fl-company"
+                   placeholder=" " autocomplete="organization">
+            <label class="form-label" for="fl-company">Company</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* :placeholder-shown = input is empty (placeholder visible) */</span>
+<span class="cmt">/* When NOT placeholder-shown = input has content → float label */</span>
+<span class="prop">.form-input</span>:not(:placeholder-shown) ~ <span class="prop">.form-label</span>,
+<span class="prop">.form-input</span>:focus ~ <span class="prop">.form-label</span> {
+  <span class="kw">top</span>: <span class="val">0.25rem</span>;
+  <span class="kw">font-size</span>: <span class="val">0.7rem</span>;
+  <span class="kw">color</span>: <span class="val">#a8d8ea</span>;
+}
+<span class="cmt">/* Input needs placeholder=" " (space) for :placeholder-shown to work */</span></pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 4: Custom Checkboxes & Radios ─────────────────── -->
+  <div class="section">
+    <h2>4. Custom Checkboxes, Radios &amp; Toggle Switches</h2>
+    <p class="section-desc">
+      Native elements with custom CSS. Tab through them with your keyboard — full keyboard support is free from the browser.
+    </p>
+
+    <div class="demo-box">
+      <div class="col-2">
+
+        <div>
+          <h3>Checkboxes</h3>
+          <div style="display:flex;flex-direction:column;gap:0.625rem;margin-bottom:1.25rem;">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="checkbox-input" checked>
+              <span class="checkbox-label">Checked by default</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="checkbox-input">
+              <span class="checkbox-label">Unchecked</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="checkbox-input" disabled checked>
+              <span class="checkbox-label">Disabled + checked</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="checkbox-input" disabled>
+              <span class="checkbox-label">Disabled</span>
+            </label>
+          </div>
+
+          <h3>Toggle Switches</h3>
+          <div style="display:flex;flex-direction:column;gap:0.625rem;">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="toggle-input" checked>
+              <span class="checkbox-label">Notifications</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="toggle-input">
+              <span class="checkbox-label">Dark mode</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" class="toggle-input" disabled>
+              <span class="checkbox-label">Feature disabled</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <fieldset class="form-fieldset">
+            <legend class="form-legend">Preferred contact method</legend>
+            <div style="display:flex;flex-direction:column;gap:0.625rem;">
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="contact" value="email" checked>
+                <span class="radio-label">Email</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="contact" value="phone">
+                <span class="radio-label">Phone</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="contact" value="sms">
+                <span class="radio-label">SMS</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="contact" value="none" disabled>
+                <span class="radio-label">Do not contact (disabled)</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend class="form-legend">Notification frequency</legend>
+            <div style="display:flex;flex-direction:column;gap:0.625rem;">
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="freq" value="daily" checked>
+                <span class="radio-label">Daily digest</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="freq" value="weekly">
+                <span class="radio-label">Weekly summary</span>
+              </label>
+              <label class="radio-wrapper">
+                <input type="radio" class="radio-input" name="freq" value="realtime">
+                <span class="radio-label">Real-time</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Remove native, keep accessible — appearance:none */</span>
+<span class="prop">.checkbox-input</span> {
+  <span class="kw">appearance</span>: <span class="val">none</span>; <span class="cmt">/* removes OS styling */</span>
+  <span class="cmt">/* element stays in DOM → keyboard, screen readers work */</span>
+}
+<span class="prop">.checkbox-input</span>:checked::after { <span class="kw">display</span>: <span class="val">block</span>; } <span class="cmt">/* show checkmark */</span>
+<span class="prop">.checkbox-input</span>:focus-visible  { <span class="kw">box-shadow</span>: <span class="val">var(--focus-outer)</span>; }</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 5: Password with Strength ─────────────────────── -->
+  <div class="section">
+    <h2>5. Password Input with Strength Indicator</h2>
+    <p class="section-desc">
+      The strength bar is driven by a <code>data-strength</code> attribute — CSS does the coloring, JavaScript only sets the number.
+    </p>
+
+    <div class="demo-box" style="max-width:420px;">
+      <div class="form-group">
+        <label class="form-label form-label--required" for="pw-input">Password</label>
+        <div class="input-wrapper">
+          <input class="form-input" type="password" id="pw-input"
+                 placeholder="Enter a strong password" required minlength="8">
+          <button type="button" class="input-clear" id="pw-toggle"
+                  aria-label="Show password" aria-pressed="false"
+                  style="font-size:0.875rem;right:0.4rem;">👁</button>
+        </div>
+        <div class="strength-bar" id="strengthBar" data-strength="">
+          <div class="strength-segment"></div>
+          <div class="strength-segment"></div>
+          <div class="strength-segment"></div>
+          <div class="strength-segment"></div>
+        </div>
+        <div class="form-hint" id="strengthLabel" style="margin-top:0.25rem;">
+          Min. 8 chars with uppercase, number, and symbol.
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* CSS reads data-strength attribute to color segments */</span>
+[<span class="prop">data-strength</span>="<span class="val">1</span>"] <span class="prop">.strength-segment</span>:nth-child(1)    { <span class="kw">background</span>: <span class="val">#dc2626</span>; }
+[<span class="prop">data-strength</span>="<span class="val">2</span>"] <span class="prop">.strength-segment</span>:nth-child(-n+2) { <span class="kw">background</span>: <span class="val">#ea580c</span>; }
+[<span class="prop">data-strength</span>="<span class="val">3</span>"] <span class="prop">.strength-segment</span>:nth-child(-n+3) { <span class="kw">background</span>: <span class="val">#ca8a04</span>; }
+[<span class="prop">data-strength</span>="<span class="val">4</span>"] <span class="prop">.strength-segment</span>                 { <span class="kw">background</span>: <span class="val">#16a34a</span>; }</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 6: Search with Clear ──────────────────────────── -->
+  <div class="section">
+    <h2>6. Search with Clear Button</h2>
+    <p class="section-desc">
+      The × button only appears when the field has content — detected via <code>:not(:placeholder-shown)</code>. No JavaScript for the visibility toggle.
+    </p>
+
+    <div class="demo-box" style="max-width:420px;">
+      <div class="form-group">
+        <label class="form-label" for="search-demo">Search</label>
+        <div class="input-wrapper">
+          <input class="form-input search-field" type="search" id="search-demo"
+                 placeholder="Search…">
+          <button type="button" class="input-clear" id="clearBtn"
+                  aria-label="Clear search">×</button>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Clear button hidden when field is empty */</span>
+<span class="prop">.input-clear</span> { <span class="kw">opacity</span>: <span class="val">0</span>; <span class="kw">pointer-events</span>: <span class="val">none</span>; }
+
+<span class="cmt">/* Appears when placeholder is hidden (field has content) */</span>
+<span class="prop">.search-field</span>:not(:placeholder-shown) ~ <span class="prop">.input-clear</span> {
+  <span class="kw">opacity</span>: <span class="val">1</span>; <span class="kw">pointer-events</span>: <span class="val">auto</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 7: Full Contact Form ──────────────────────────── -->
+  <div class="section">
+    <h2>7. Complete Contact Form</h2>
+    <p class="section-desc">
+      CSS Grid layout with grouped validation. All input types: text, email, tel, select, textarea, checkbox. Submit to see native browser validation.
+    </p>
+
+    <div class="demo-box">
+      <form class="contact-grid" id="contactForm" novalidate>
+
+        <div class="form-group full-width">
+          <label class="form-label form-label--required" for="cf-name">Full Name</label>
+          <input class="form-input" type="text" id="cf-name" name="name"
+                 placeholder="Alice Smith" required minlength="2" autocomplete="name">
+          <div class="form-error"><span>✕</span><span>Please enter your name.</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label form-label--required" for="cf-email">Email</label>
+          <input class="form-input" type="email" id="cf-email" name="email"
+                 placeholder="alice@example.com" required autocomplete="email">
+          <div class="form-error"><span>✕</span><span>Please enter a valid email.</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cf-phone">Phone</label>
+          <input class="form-input" type="tel" id="cf-phone" name="phone"
+                 placeholder="+1 555-0100" autocomplete="tel">
+        </div>
+
+        <div class="form-group full-width">
+          <label class="form-label form-label--required" for="cf-subject">Subject</label>
+          <select class="form-select" id="cf-subject" name="subject" required>
+            <option value="" disabled selected>Select a subject…</option>
+            <option value="general">General inquiry</option>
+            <option value="support">Technical support</option>
+            <option value="billing">Billing question</option>
+            <option value="feedback">Feedback</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label class="form-label form-label--required" for="cf-message">Message</label>
+          <textarea class="form-textarea" id="cf-message" name="message"
+                    rows="5" required minlength="10"
+                    placeholder="Describe your question or message…"></textarea>
+          <div class="form-error"><span>✕</span><span>Please enter a message (min 10 characters).</span></div>
+        </div>
+
+        <div class="form-group full-width" style="display:flex;flex-direction:column;gap:0.5rem;">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" class="checkbox-input" id="cf-terms" required>
+            <span class="checkbox-label">I agree to the <a href="#" style="color:var(--accent)">terms and conditions</a></span>
+          </label>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" class="checkbox-input" id="cf-news">
+            <span class="checkbox-label">Subscribe to newsletter (optional)</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="reset" class="btn btn--secondary">Reset</button>
+          <button type="submit" class="btn btn--primary">Send Message</button>
+        </div>
+
+      </form>
+
+      <div id="formSuccess" style="display:none;margin-top:1rem;padding:0.875rem 1rem;background:#052e16;color:#86efac;border:1px solid #14532d;border-radius:var(--r-lg);font-size:0.875rem;">
+        ✓ Message sent successfully! (demo — no server involved)
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 8: Keyboard Nav & Tab Order ───────────────────── -->
+  <div class="section">
+    <h2>8. Keyboard Navigation</h2>
+    <p class="section-desc">
+      Press <kbd style="background:var(--bg3);border:1px solid var(--border);padding:0.1rem 0.4rem;border-radius:3px;">Tab</kbd>
+      to move through these fields. Focus order matches DOM order — never use positive <code>tabindex</code> values.
+    </p>
+
+    <div class="demo-box">
+      <div id="focusTracker" style="font-size:0.75rem;color:var(--text-dim);margin-bottom:1rem;min-height:1.2rem;">
+        Tab through the fields below to see focus tracking.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;max-width:400px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="kb-1">Field 1 (tabindex default)</label>
+          <input class="form-input" type="text" id="kb-1" placeholder="Tab order: 1">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="kb-2">Field 2</label>
+          <input class="form-input" type="text" id="kb-2" placeholder="Tab order: 2">
+        </div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <button class="btn btn--secondary btn--sm" id="kb-btn1">Button A (3)</button>
+          <button class="btn btn--secondary btn--sm" id="kb-btn2">Button B (4)</button>
+          <button class="btn btn--secondary btn--sm" id="kb-btn3">Button C (5)</button>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="kb-3">Field 3 (last)</label>
+          <input class="form-input" type="text" id="kb-3" placeholder="Tab order: 6">
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Natural tab order = DOM order. Never override with tabindex="N" */</span>
+<span class="prop">input</span>     { <span class="cmt">/* focusable by default */</span> }
+<span class="prop">button</span>    { <span class="cmt">/* focusable by default */</span> }
+[<span class="prop">tabindex</span>="<span class="val">0</span>"]  { <span class="cmt">/* include non-focusable element in tab order */</span> }
+[<span class="prop">tabindex</span>="<span class="val">-1</span>"] { <span class="cmt">/* focusable by script only — not by Tab key */</span> }</pre>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+// ─── Password strength ────────────────────────────────────
+const pwInput  = document.getElementById('pw-input');
+const strengthBar   = document.getElementById('strengthBar');
+const strengthLabel = document.getElementById('strengthLabel');
+const pwToggle = document.getElementById('pw-toggle');
+
+const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+const STRENGTH_COLORS = ['', '#dc2626', '#ea580c', '#ca8a04', '#16a34a'];
+
+function calcStrength(val) {
+  if (!val) return 0;
+  let score = 0;
+  if (val.length >= 8)          score++;
+  if (/[A-Z]/.test(val))        score++;
+  if (/[0-9]/.test(val))        score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  return score;
+}
+
+pwInput.addEventListener('input', () => {
+  const s = calcStrength(pwInput.value);
+  strengthBar.dataset.strength = pwInput.value.length > 0 ? s : '';
+  if (pwInput.value.length === 0) {
+    strengthLabel.textContent = 'Min. 8 chars with uppercase, number, and symbol.';
+    strengthLabel.style.color = 'var(--form-text-dim)';
+  } else {
+    strengthLabel.textContent = STRENGTH_LABELS[s] + (s < 4 ? ' — add ' + (['uppercase letter','number','symbol'][3-s]||'variety') : ' password!');
+    strengthLabel.style.color = STRENGTH_COLORS[s];
+  }
+});
+
+pwToggle.addEventListener('click', () => {
+  const isText = pwInput.type === 'text';
+  pwInput.type = isText ? 'password' : 'text';
+  pwToggle.setAttribute('aria-pressed', String(!isText));
+  pwToggle.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
+  pwToggle.style.opacity = isText ? '0.6' : '1';
+  // Keep visible when field has content
+  pwToggle.style.pointerEvents = 'auto';
+  pwToggle.style.opacity = '1';
+});
+
+// ─── Search clear ─────────────────────────────────────────
+const clearBtn  = document.getElementById('clearBtn');
+const searchFld = document.getElementById('search-demo');
+
+clearBtn.addEventListener('click', () => {
+  searchFld.value = '';
+  searchFld.focus();
+  // Trigger input event so :placeholder-shown updates
+  searchFld.dispatchEvent(new Event('input'));
+});
+
+// ─── Contact form submit ──────────────────────────────────
+const contactForm = document.getElementById('contactForm');
+const formSuccess = document.getElementById('formSuccess');
+
+contactForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (contactForm.checkValidity()) {
+    formSuccess.style.display = 'block';
+    contactForm.reset();
+    setTimeout(() => { formSuccess.style.display = 'none'; }, 4000);
+  } else {
+    // Report validity for non-:user-invalid browsers
+    const firstInvalid = contactForm.querySelector(':invalid');
+    if (firstInvalid) firstInvalid.focus();
+  }
+});
+
+contactForm.addEventListener('reset', () => {
+  formSuccess.style.display = 'none';
+});
+
+// ─── Validation state labels ──────────────────────────────
+const valEmail = document.getElementById('val-email');
+const valState = document.getElementById('val-email-state');
+
+valEmail.addEventListener('focus', () => {
+  valState.textContent = ':focus';
+  valState.className = 'state-tag focus';
+});
+
+valEmail.addEventListener('blur', () => {
+  if (valEmail.validity.valid) {
+    valState.textContent = ':user-valid';
+    valState.className = 'state-tag valid';
+  } else if (valEmail.value.length > 0) {
+    valState.textContent = ':user-invalid';
+    valState.className = 'state-tag invalid';
+  } else {
+    valState.textContent = 'empty';
+    valState.className = 'state-tag';
+  }
+});
+
+// ─── Focus tracker ────────────────────────────────────────
+const tracker = document.getElementById('focusTracker');
+const kbEls = ['kb-1','kb-2','kb-btn1','kb-btn2','kb-btn3','kb-3'].map(id => document.getElementById(id));
+
+kbEls.forEach((el, i) => {
+  el.addEventListener('focus', () => {
+    tracker.innerHTML = `Focused: <span style="color:var(--accent)">${el.tagName.toLowerCase()}#${el.id}</span> — tab position ${i+1} of ${kbEls.length}`;
+  });
+  el.addEventListener('blur', () => {
+    tracker.textContent = 'Tab through the fields below to see focus tracking.';
+  });
+});
+</script>
+</body>
+</html>

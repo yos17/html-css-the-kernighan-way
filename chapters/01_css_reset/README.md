@@ -1,42 +1,189 @@
 # Chapter 1 — Build Your Own CSS Reset
 
-Every browser ships with a default stylesheet. Before your first rule is parsed, Chrome has already set `<h1>` to `2em` bold, `<body>` to `8px` margin, `<ul>` to `40px` padding-left, and `<button>` to whatever the operating system's native button style looks like. These defaults differ across browsers, differ across operating systems, and differ from what you actually want. Your CSS has to fight them on every project. In this chapter you build a CSS reset from scratch — the 30-odd rules that establish a clean, predictable baseline before any real styling begins.
+Let's start at the very beginning. If you've never written HTML or CSS before, this chapter is for you.
 
 ---
 
-## The Problem
+## What Is HTML?
 
-Open a blank HTML file in Chrome and Firefox side by side. Without any CSS, the heading sizes differ. The form element fonts differ. The `<table>` spacing differs. The `<button>` appearance differs. The list indentation differs.
+HTML is the language that tells a browser *what is on a page*. Every webpage you've ever seen is built from HTML. Here's the simplest possible webpage:
 
-The naive approach is to fix these one at a time, in your component CSS, as you discover them:
-
-```css
-/* scattered across multiple files */
-.nav ul { padding: 0; list-style: none; }
-.sidebar h2 { font-size: 1.2rem; }
-.card button { font-family: inherit; }
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    Hello, world!
+  </body>
+</html>
 ```
 
-The problem: you're fixing the same browser default in a dozen different places. When a new developer adds a `<ul>` to a component, they get the browser's 40px left padding back. The fix is to establish the baseline *once*, at the top of the cascade, before any component styles run.
+Save this as `hello.html` and open it in a browser. You'll see the words "Hello, world!" — that's it. You just wrote HTML.
 
-That's what a CSS reset does. Three questions drive every rule:
+HTML uses **tags** to mark up content. A tag is a word inside angle brackets:
 
 ```
-What is the browser's default for this element?   →  browser stylesheet
-Is that default ever what we want?                 →  almost never
-What baseline makes components easiest to build?   →  reset to that
+<h1>This is a heading</h1>
 ```
+
+- `<h1>` is the **opening tag** — it says "start of a heading"
+- `</h1>` is the **closing tag** — it says "end of a heading"
+- Everything between them is the content
+
+There are tags for headings (`<h1>` through `<h6>`), paragraphs (`<p>`), links (`<a>`), images (`<img>`), buttons (`<button>`), and many more. Each tag has a meaning. `<h1>` means "most important heading". `<p>` means "paragraph". `<ul>` means "unordered list" (bullets).
+
+---
+
+## What Is CSS?
+
+CSS is the language that tells a browser *how things should look*. Without CSS, every webpage looks like a plain text document. With CSS, you can change colors, sizes, fonts, spacing — everything visual.
+
+Here's how to add CSS to an HTML file, using a `<style>` tag:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    h1 {
+      color: blue;
+      font-size: 32px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hello, world!</h1>
+</body>
+</html>
+```
+
+**Try it**: paste this into a file called `test.html` and open it. The heading should be blue.
+
+A CSS rule has two parts:
+
+```
+h1 {
+  color: blue;
+}
+│    └── declaration: property + value
+└────── selector: which elements to style
+```
+
+- The **selector** (`h1`) picks which HTML elements to style
+- The **declaration block** (`{ color: blue; }`) says what to do to them
+- Each declaration is a `property: value;` pair
+
+---
+
+## How HTML and CSS Connect
+
+There are three ways to connect CSS to HTML:
+
+**1. Inline styles** (worst — only for quick tests):
+```html
+<h1 style="color: blue;">Hello</h1>
+```
+
+**2. A `<style>` tag** (good for single files — this is what we use in this book):
+```html
+<head>
+  <style>
+    h1 { color: blue; }
+  </style>
+</head>
+```
+
+**3. An external `.css` file** (best for real projects):
+```html
+<head>
+  <link rel="stylesheet" href="styles.css">
+</head>
+```
+
+In this book, every chapter is a single `.html` file with a `<style>` tag. You can open it directly in any browser — no server, no tools required.
+
+---
+
+## The Problem: Browser Defaults
+
+Here's something surprising: before you write a single line of CSS, your page already has styles. Every browser ships with a **default stylesheet** — a set of CSS rules built into the browser itself.
+
+These defaults exist so that raw HTML looks *somewhat* readable even without any CSS. For example, the browser's built-in rules make `<h1>` large and bold, `<a>` links blue and underlined, and `<ul>` lists indented with bullet points.
+
+The problem is that these defaults are **inconsistent across browsers** and almost never what you actually want when building a real UI:
+
+```
+Chrome default for <h1>:
+  font-size: 2em     (that's 32px if body is 16px)
+  font-weight: bold
+  margin-top: 0.67em
+  margin-bottom: 0.67em
+
+Firefox default for <h1>:
+  font-size: 2em     (same)
+  font-weight: bold
+  margin-block-start: 0.67em  ← slightly different property name
+  margin-block-end: 0.67em
+
+Safari default for <button>:
+  Uses the macOS native button style — looks nothing like Chrome's button
+```
+
+If you don't reset these defaults, your page will look different in different browsers, and every component you build has to fight the browser's assumptions.
+
+**A CSS reset is the solution.** It's a small set of rules you put at the top of your stylesheet — before any other CSS — that clears out the browser defaults and establishes a clean, predictable baseline.
+
+Think of it as clearing a whiteboard before you start drawing.
+
+---
+
+## Your First CSS Rule: Exploring What's There
+
+Before we build the reset, let's see the browser defaults in action. Create this file and open it:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Browser Defaults</title>
+  <!-- No CSS at all! -->
+</head>
+<body>
+
+  <h1>Heading Level 1</h1>
+  <h2>Heading Level 2</h2>
+  <h3>Heading Level 3</h3>
+
+  <p>A paragraph of text. Notice the margin above and below.</p>
+
+  <ul>
+    <li>List item one</li>
+    <li>List item two</li>
+  </ul>
+
+  <button>A Button</button>
+
+</body>
+</html>
+```
+
+Open this in your browser. You'll see:
+- `<h1>` is big and bold
+- `<p>` has space above and below it
+- `<ul>` is indented with bullet points
+- `<button>` looks like a native OS button
+
+These are all coming from the browser's built-in stylesheet — you wrote zero CSS. Now we'll replace all of that with our own baseline.
 
 ---
 
 ## Building It Step by Step
 
-### v1 — The Box Model Fix
+### v1 — The Most Important Rule: Box Sizing
 
-The single most impactful reset rule. Browsers default to `box-sizing: content-box`, which means width and height don't include padding or borders. This makes layout math unintuitive:
+The single most impactful reset rule is this one:
 
 ```css
-/* v1: box-sizing reset — the most important rule in any stylesheet */
 *,
 *::before,
 *::after {
@@ -44,26 +191,58 @@ The single most impactful reset rule. Browsers default to `box-sizing: content-b
 }
 ```
 
-With `content-box` (the default):
+To understand why this matters, you need to know about the **box model**.
+
+Every HTML element is a box. That box has four layers:
+
 ```
-element width = content width + padding + border
-width: 200px + padding: 20px = 240px actual width  ← surprising
+┌─────────────────────────────────────┐
+│              MARGIN                 │  ← space outside the element
+│  ┌───────────────────────────────┐  │
+│  │            BORDER             │  │  ← the visible outline
+│  │  ┌─────────────────────────┐  │  │
+│  │  │         PADDING         │  │  │  ← space between border and content
+│  │  │  ┌───────────────────┐  │  │  │
+│  │  │  │      CONTENT      │  │  │  │  ← text, images, etc.
+│  │  │  └───────────────────┘  │  │  │
+│  │  └─────────────────────────┘  │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
 ```
 
-With `border-box` (what we want):
-```
-element width = total rendered width, including padding and border
-width: 200px + padding: 20px = 200px actual width  ← predictable
-```
-
-The `*` selector with `*::before` and `*::after` covers every element and both pseudo-elements. The `*` selector has zero specificity — any rule in your stylesheet can override it.
-
-### v2 — Margin, Padding, and Typography Reset
-
-Browser default margins and padding are inconsistent and almost never the values you want in a component system:
+The browser default (`box-sizing: content-box`) means: when you set `width: 200px`, that's *only* the content area. Any padding or border you add makes the total element *wider* than 200px.
 
 ```css
-/* v2: remove all default spacing and normalize typography */
+/* content-box (browser default) — confusing: */
+.box {
+  width: 200px;
+  padding: 20px;
+  border: 5px solid black;
+}
+/* Actual rendered width: 200 + 20 + 20 + 5 + 5 = 250px — not 200! */
+```
+
+With `border-box` (what our reset sets), `width: 200px` means the *total* rendered width including padding and border:
+
+```css
+/* border-box (our reset) — predictable: */
+.box {
+  width: 200px;
+  padding: 20px;    /* included in 200px */
+  border: 5px solid;/* included in 200px */
+}
+/* Actual rendered width: 200px — exactly what you set */
+```
+
+**Try it**: create two divs, one with each box-sizing, set both to `width: 200px` with `padding: 20px`. Measure them — the content-box one will be wider.
+
+The `*` selector means "every single element". `*::before` and `*::after` cover **pseudo-elements** — virtual elements that CSS can create (covered in later chapters). This one rule applies to everything on the page.
+
+### v2 — Remove Default Spacing and Typography
+
+Browsers add margin to headings, paragraphs, lists, and more. We remove it all:
+
+```css
 *,
 *::before,
 *::after {
@@ -71,39 +250,39 @@ Browser default margins and padding are inconsistent and almost never the values
   margin: 0;
   padding: 0;
 }
+```
 
-body {
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
+Now *nothing* has default spacing. We'll add it back deliberately in our components.
 
+Next, fix the headings. Browser defaults make `<h1>` through `<h6>` have different sizes and bold weight. We reset that too, so our type scale (Chapter 2) can set sizes deliberately:
+
+```css
 h1, h2, h3, h4, h5, h6 {
-  font-size: inherit;
-  font-weight: inherit;
-}
-
-ul, ol {
-  list-style: none;
-}
-
-img, picture, video, canvas, svg {
-  display: block;
-  max-width: 100%;
-}
-
-input, button, textarea, select {
-  font: inherit;
+  font-size: inherit;    /* same size as body — we'll set these later */
+  font-weight: inherit;  /* same weight as body — we'll set these later */
 }
 ```
 
-`font-size: inherit` on headings removes the `2em`/`1.5em`/etc. sizing — your type scale will set these deliberately, not accidentally. `font: inherit` on form elements is perhaps the most-forgotten rule: browsers default form element fonts to the OS system font, not your body font.
+**What `inherit` means**: "use whatever value the parent element has." Since body has `font-size: 1rem` and `font-weight: 400`, all headings now default to those same values. They'll look the same as paragraph text until our type scale adds size and weight back.
+
+And fix form elements. This is a commonly forgotten one:
+
+```css
+input, button, textarea, select {
+  font: inherit;  /* use the page font, not the OS system font */
+}
+```
+
+Without this rule, `<input>` and `<button>` use the operating system's default font (different on Windows, Mac, and Linux). `font: inherit` tells them to use the same font as the rest of the page.
+
+**Common mistake**: forgetting `font: inherit` on form elements, then wondering why your button text looks different from your body text. This rule fixes it.
 
 ### v3 — Sensible Defaults
 
-The reset isn't just zeroing things out — it also establishes sensible baselines:
+The reset isn't just removing things — it also adds sensible new baselines:
 
 ```css
-/* v3: complete reset with sensible defaults */
+/* ── Box sizing ──────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -112,54 +291,65 @@ The reset isn't just zeroing things out — it also establishes sensible baselin
   padding: 0;
 }
 
+/* ── Root defaults ───────────────────────────────── */
 :root {
-  /* Prevent text size adjustment on mobile orientation change */
+  /* Prevents mobile browsers from zooming text on rotation */
   -webkit-text-size-adjust: 100%;
-  /* Set consistent tab size */
-  tab-size: 4;
 }
 
+/* ── Body defaults ───────────────────────────────── */
 body {
-  min-height: 100vh;          /* body at least fills viewport */
+  /* body always fills the whole viewport, even if page is short */
+  min-height: 100vh;
+
+  /* comfortable line spacing for all text — 1.5 means 1.5× the font size */
   line-height: 1.5;
+
+  /* makes text crisper on Mac/iPhone screens */
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeSpeed;
 }
 
+/* ── Typography ──────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-size: inherit;
   font-weight: inherit;
 }
 
-ul[role="list"], ol[role="list"] {
-  list-style: none;            /* only reset lists that are explicitly lists */
+/* ── Lists ───────────────────────────────────────── */
+/* Only remove bullets from lists that have role="list"
+   (see the Walkthrough for why) */
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
 }
 
+/* ── Images and media ────────────────────────────── */
 img, picture, video, canvas, svg {
-  display: block;              /* remove bottom gap from inline images */
-  max-width: 100%;             /* images never overflow their container */
+  /* block removes the mysterious gap below inline images */
+  display: block;
+  /* images never overflow their container */
+  max-width: 100%;
 }
 
+/* ── Form elements ───────────────────────────────── */
 input, button, textarea, select {
-  font: inherit;               /* form elements use page font, not OS default */
+  font: inherit;
 }
 
+/* ── Overflow ────────────────────────────────────── */
 p, h1, h2, h3, h4, h5, h6 {
-  overflow-wrap: break-word;   /* prevent long words from causing overflow */
-}
-
-#root, #__next {
-  isolation: isolate;          /* create a new stacking context for JS frameworks */
+  /* long words won't break the layout horizontally */
+  overflow-wrap: break-word;
 }
 ```
 
-The `ul[role="list"]` selector is intentional. The WCAG accessibility guidelines say that removing `list-style` from a `<ul>` causes screen readers to stop announcing it as a list. By only resetting lists that have `role="list"`, you tell both the browser and screen readers that this is a navigational/functional list, not a document list.
+This is the complete reset. Every rule here has a specific reason. The walkthrough explains each one.
 
 ---
 
 ## The Complete Program
 
-`css-reset.html` — open it in your browser. Toggle "Show Reset" to see what changes. Click each category to see the before/after for that property group.
+`css-reset.html` — open it in your browser. Click "Toggle Reset" to see what each rule changes. Click a category to filter the rules and see what they do.
 
 ```html
 <!DOCTYPE html>
@@ -183,15 +373,29 @@ The `ul[role="list"]` selector is intentional. The WCAG accessibility guidelines
   padding: 0;
 }
 
-:root { -webkit-text-size-adjust: 100%; tab-size: 4; }
-body  { min-height: 100vh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+:root { -webkit-text-size-adjust: 100%; }
 
-h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+body  {
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 ul[role="list"], ol[role="list"] { list-style: none; }
-img, picture, video, canvas, svg { display: block; max-width: 100%; }
-input, button, textarea, select  { font: inherit; }
-p, h1, h2, h3, h4, h5, h6        { overflow-wrap: break-word; }
-#root, #__next                    { isolation: isolate; }
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select { font: inherit; }
+
+p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
 </style>
 </body>
 </html>
@@ -201,211 +405,259 @@ p, h1, h2, h3, h4, h5, h6        { overflow-wrap: break-word; }
 
 ## Walkthrough
 
-### The Cascade Algorithm
+### Selectors — How CSS Picks Elements
 
-"Cascade" is the C in CSS. It's the algorithm that decides which rule wins when two rules target the same element and property. The algorithm has four steps, applied in order:
+You've seen `h1 { }` — that's a **type selector**: it matches every `<h1>` element on the page.
 
-```
-1. Origin and importance
-   Browser stylesheet < Author stylesheet < Author !important < Browser !important
-   (You rarely touch this — just know your rules beat the browser's.)
+There are several kinds of selectors:
 
-2. Specificity
-   The weight of the selector. Higher specificity wins.
-   [inline styles] > [ID selectors] > [class/attr/pseudo-class] > [element/pseudo-element]
+```css
+/* Type selector — matches the element by its tag name */
+h1 { color: red; }       /* all <h1> elements */
+p  { color: blue; }      /* all <p> elements */
 
-3. Source order
-   When specificity ties, the later rule wins.
+/* Class selector — matches elements with class="..." */
+.button { background: blue; }    /* <button class="button"> */
+.big    { font-size: 2rem; }     /* any element with class="big" */
 
-4. Inheritance
-   Some properties inherit from parent to child automatically.
-   Others don't. (See "Inheritance" section below.)
-```
+/* ID selector — matches the one element with id="..." */
+#header { position: sticky; }   /* <div id="header"> */
 
-Our reset wins over browser defaults because it's in the author stylesheet (step 1), and uses `*` which has zero specificity — any rule you write later can override it (step 2).
+/* Universal selector — matches every element */
+* { box-sizing: border-box; }
 
-### The Box Model
-
-Every element is a rectangular box made of four layers:
-
-```
-┌─────────────────────────────────────────┐  ← margin edge
-│               margin                    │
-│  ┌───────────────────────────────────┐  │  ← border edge
-│  │            border                 │  │
-│  │  ┌─────────────────────────────┐  │  │  ← padding edge
-│  │  │          padding            │  │  │
-│  │  │  ┌───────────────────────┐  │  │  │  ← content edge
-│  │  │  │       content         │  │  │  │
-│  │  │  └───────────────────────┘  │  │  │
-│  │  └─────────────────────────────┘  │  │
-│  └───────────────────────────────────┘  │
-└─────────────────────────────────────────┘
+/* Combining selectors */
+h1, h2, h3 { font-weight: bold; }   /* commas = "and also" */
+.card p    { color: gray; }         /* space = "inside" — <p> inside .card */
 ```
 
-`content-box` (browser default): `width` applies to the *content* box only. Padding and border add on top.
+You'll mostly use **type selectors** and **class selectors**. ID selectors (`#`) are powerful but hard to override (more on that below).
 
-`border-box` (our reset): `width` applies to the *border* box. Padding and border are subtracted from the content area instead. Your specified `width` is the total rendered width.
+### Specificity — When Two Rules Conflict
 
-Why does this matter? With `content-box`, a grid of 4 items `width: 25%` breaks if you add `padding: 10px`. With `border-box`, it doesn't — padding is absorbed inside the 25%.
+What happens when two CSS rules target the same element?
 
-### Specificity
-
-Specificity is a three-number score written as `(A, B, C)`:
-
-```
-A = number of ID selectors (#header, #nav)
-B = number of class, attribute, pseudo-class selectors (.btn, [type], :hover)
-C = number of element and pseudo-element selectors (div, h1, ::before)
-
-Selector              Score    Wins against
-─────────────────────────────────────────────────────────────
-*                     (0,0,0)  Nothing — lowest possible
-div                   (0,0,1)  * only
-.button               (0,1,0)  div, * — class beats element
-div.button            (0,1,1)  .button alone
-#header               (1,0,0)  Everything above
-#header .button       (1,1,0)  #header alone
-style="color:red"     —        Beats all selectors (inline wins)
+```css
+h1 { color: red; }
+h1 { color: blue; }
 ```
 
-The `*` in our reset has score `(0,0,0)` — it can be overridden by *anything*. This is intentional. The reset is a floor, not a ceiling.
+The later rule wins — that's **source order**. But what about:
 
-### Inheritance
+```css
+h1     { color: red; }   /* type selector */
+.title { color: blue; }  /* class selector */
+```
 
-Some CSS properties automatically pass from parent to child. Others don't.
+```html
+<h1 class="title">Which color?</h1>
+```
 
-**Inherited by default** (propagate down the tree):
-- Typography: `font-family`, `font-size`, `font-weight`, `line-height`, `color`
-- Text: `text-align`, `text-transform`, `white-space`, `word-spacing`
-- Lists: `list-style`, `list-style-type`
-- Visibility: `visibility` (not `display`), `cursor`
+The answer is **blue** — even if `h1` came first. That's because class selectors have higher **specificity** than type selectors. Specificity is a score that determines which rule wins:
 
-**Not inherited by default** (only apply to the element they're set on):
-- Box model: `width`, `height`, `margin`, `padding`, `border`
-- Background: `background`, `background-color`
-- Layout: `display`, `position`, `float`, `overflow`
-- Visual: `box-shadow`, `opacity`, `transform`
+```
+Selector type          Score
+──────────────────────────────────────────────────────
+Type selector (h1)     (0, 0, 1)  ← lowest
+Class selector (.btn)  (0, 1, 0)  ← beats type
+ID selector (#header)  (1, 0, 0)  ← beats class
+Inline style           (ignore)   ← beats everything
+```
 
-This is why `font: inherit` on form elements is needed. `font-family` and `font-size` are inherited properties — they *should* pass from `body` to every child, including form elements. But browsers override this inheritance for `<input>` and `<button>` with a browser stylesheet rule of higher specificity (the OS system font rule). `font: inherit` explicitly resets that override.
+Higher score wins. When scores tie, the later rule wins.
+
+**Why our reset uses `*`**: the universal selector has zero specificity — score `(0, 0, 0)`. That means *any* rule you write later can override the reset. This is intentional: the reset is a floor, not a ceiling.
+
+**Common mistake**: writing `#myId { color: red; }` and wondering why a later `.class { color: blue; }` doesn't work. IDs beat classes. Use classes.
+
+### The Cascade — The "C" in CSS
+
+"Cascading" means rules flow down from multiple sources. The browser combines them in this order:
+
+```
+1. Browser defaults (lowest priority)
+       ↓
+2. Your stylesheet (author styles)
+       ↓
+3. Inline styles (style="...")
+       ↓
+4. !important declarations (highest — use sparingly)
+```
+
+Your reset sits at level 2 and wins over browser defaults (level 1). Any of your component styles also sit at level 2, so specificity and source order decide between them.
+
+### Inheritance — What Passes Down
+
+Some CSS properties automatically pass from a parent element to its children. This is called **inheritance**:
+
+```html
+<body style="color: darkblue; font-family: Georgia, serif;">
+  <p>This text is darkblue in Georgia.</p>
+  <div>
+    <span>This too — it inherits from body.</span>
+  </div>
+</body>
+```
+
+Properties that **do** inherit (they pass to children):
+- `color`, `font-family`, `font-size`, `font-weight`, `line-height`
+- `text-align`, `letter-spacing`, `word-spacing`
+
+Properties that **do not** inherit (each element sets its own):
+- `background`, `border`, `margin`, `padding`
+- `width`, `height`, `display`, `position`
+
+**Why `font: inherit` on form elements?** `font-family` and `font-size` are inherited — they *should* reach `<input>` and `<button>`. But the browser's default stylesheet overrides them with the OS system font. `font: inherit` forces the browser's override away and lets inheritance work normally.
 
 ### Why `display: block` on Images
 
-Inline elements (like `<img>` by default) sit on a text baseline. The text baseline doesn't sit at the bottom of the line — there's a small gap between the baseline and the bottom of the line box (for descenders like `g` and `p`). This creates a mysterious gap below inline images that CSS beginners spend hours debugging.
+Here's a strange browser behavior worth understanding. In HTML, elements are either **block** or **inline** by default:
 
-`display: block` removes the element from inline flow entirely. The gap disappears.
+- **Block elements** (`<div>`, `<p>`, `<h1>`) take up the full width and stack vertically
+- **Inline elements** (`<span>`, `<a>`, `<img>`) flow with text, side by side
+
+Images (`<img>`) are inline by default. Inline elements sit on a **text baseline** — the invisible line that text rests on. Below the baseline, there's a small gap reserved for text descenders (the tails on letters like `g`, `p`, `y`).
+
+This gap appears below inline images as mysterious white space:
+
+```
+Without reset:                  With display: block:
+┌────────────────┐              ┌────────────────┐
+│                │              │                │
+│     image      │              │     image      │
+│                │              │                │
+└────────────────┘              └────────────────┘
+            ↑ gap here          (gap is gone)
+```
+
+Setting `display: block` removes the image from inline text flow. The gap disappears.
+
+**Try it**: put an `<img>` inside a `<div>` with a background color. Without `display: block`, you'll see a few pixels of the background below the image. With `display: block`, it's gone.
+
+### The List Accessibility Rule
 
 ```css
-/* Before reset: mysterious 4px gap below every image */
-img { /* display: inline (default) */ }
-
-/* After reset: no gap */
-img { display: block; }
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
+}
 ```
 
-### The Accessibility List Selector
+Why not just `ul { list-style: none; }`?
 
-```css
-ul[role="list"], ol[role="list"] { list-style: none; }
-```
+The answer involves screen readers — software that reads webpages aloud for users with visual impairments. When VoiceOver (macOS/iOS's screen reader) encounters a `<ul>` styled with `list-style: none`, it stops announcing it *as a list*. From VoiceOver's perspective, if there are no bullets, it's not a list.
 
-The `[role="list"]` attribute selector only matches elements that have `role="list"` in the HTML. This means:
+The `[role="list"]` attribute tells both the browser and assistive technology: "I'm deliberately making this look non-list-like, but it *is* a list semantically." With this attribute present, VoiceOver continues to announce it correctly.
 
-```html
-<!-- This list keeps its bullets (document content): -->
-<ul>
-  <li>First item</li>
-  <li>Second item</li>
-</ul>
-
-<!-- This list loses its bullets (navigation/UI): -->
-<ul role="list">
-  <li><a href="/home">Home</a></li>
-  <li><a href="/about">About</a></li>
-</ul>
-```
-
-When you add `role="list"`, you're explicitly telling both the browser and screen readers: "this is a functional list, not a document list." The `list-style: none` reset is safe on that basis.
+Rule of thumb:
+- Navigation menus, tags, card grids → add `role="list"`, then remove bullets
+- Article content, instructions → leave the `<ul>` alone; keep its bullets
 
 ---
 
-## Guided Try It — Add a Print Stylesheet
+## Guided Try It — Add a Focus Ring
 
-**The goal**: add a `@media print` block to the reset that removes backgrounds, reduces colors, and ensures links show their URLs when printed.
+**The goal**: add a visible focus indicator so keyboard users can see which element is currently selected.
 
-**Why this is useful**: print stylesheets are forgotten by nearly every web developer, but they're the entire interface between your page and a user's PDF export or physical printout.
+**Why this is important**: not everyone uses a mouse. Many users navigate with the keyboard (Tab to move, Enter to activate). Without a visible focus indicator, they have no idea where they are on the page. Removing `:focus` outlines is one of the most common accessibility mistakes.
 
-**Step 1 — Hide decorative elements**
+**What is `:focus`?** It's a **pseudo-class** — a selector that matches an element based on its *state*, not its type or class. `:focus` matches whichever element currently has keyboard focus.
+
+**Step 1 — See the browser default first**
+
+```html
+<button>Click me</button>
+<a href="#">A link</a>
+<input type="text" placeholder="Type here">
+```
+
+Press Tab on your keyboard to move focus between them. See the browser's default focus ring (usually a blue outline or a dotted border).
+
+**Step 2 — The wrong way (never do this)**
 
 ```css
-/* Add to your reset: */
-@media print {
-  *,
-  *::before,
-  *::after {
-    background: transparent !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
+/* DANGER: never do this — it removes focus for keyboard users */
+* { outline: none; }
+:focus { outline: none; }
+```
+
+Some websites remove the focus ring because it looks "ugly". This makes the site unusable for keyboard-only users.
+
+**Step 3 — The right way**
+
+```css
+/* Keep focus ring for keyboard navigation, hide it for mouse clicks */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Show a clear, styled focus ring when navigating by keyboard */
+:focus-visible {
+  outline: 2px solid #005fcc;
+  outline-offset: 2px;
 }
 ```
 
-The `!important` is acceptable here because print styles intentionally override everything else — this is one of the rare legitimate uses.
+`:focus-visible` is a smarter version of `:focus`. The browser shows it when the user *navigates with the keyboard* but hides it when they click with the mouse. Best of both worlds.
 
-**Step 2 — Show link URLs**
-
-```css
-@media print {
-  a[href]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.85em;
-    color: #555;
-  }
-
-  /* Skip internal and javascript: links */
-  a[href^="#"]::after,
-  a[href^="javascript:"]::after {
-    content: "";
-  }
-}
-```
-
-The `attr(href)` function in `content` reads the value of the `href` attribute and inserts it as text. `a[href^="#"]` is an attribute selector that matches links starting with `#` (anchor links).
-
-**Step 3 — Prevent bad page breaks**
-
-```css
-@media print {
-  h1, h2, h3 { page-break-after: avoid; }
-  p           { orphans: 3; widows: 3; }
-  table       { page-break-inside: avoid; }
-}
-```
-
-`page-break-after: avoid` prevents a page break immediately after a heading. `orphans` and `widows` control how many lines must remain at the bottom/top of a page before a paragraph is split.
-
-**Think about it**: the `@media print` block goes at the *bottom* of the reset. Why? Consider specificity and source order: all our print rules need to override the page styles. Since print rules use `!important` for color/background, source order doesn't matter for those — but for layout rules like `page-break-after`, order matters. By putting the print block last, you guarantee it wins on anything that's a specificity tie.
+**Try it**: tab through some elements after adding this rule. The focus ring shows while keyboard-navigating but not when clicking.
 
 ---
 
 ## Exercises
 
-1. **Add `border-collapse` to tables**: Tables have `border-collapse: separate` by default, which creates double borders between cells. Add a rule to the reset that sets `border-collapse: collapse` and `border-spacing: 0` on all tables. Test: create a `<table>` with borders and see the difference.
+1. **Explore browser defaults**: Create an HTML file with one each of `<h1>`, `<h2>`, `<h3>`, `<p>`, `<ul>`, `<button>`, and `<input>`. Open it with no CSS. Use your browser's DevTools (F12 → Inspect → Computed tab) to see what `font-size`, `margin`, and `padding` the browser is applying to each element. Write down three defaults that surprised you.
 
-2. **Add a focus-visible ring**: Some resets remove `:focus` outlines (`:focus { outline: none }`), which is an accessibility disaster. Instead, add a rule that keeps focus styles for keyboard navigation but hides them for mouse clicks. Use `:focus-visible` with a `2px solid` outline in a visible color.
+2. **Feel the box model**: Create a `<div>` with `width: 200px`, `padding: 30px`, and `border: 10px solid black`. First use the browser default `box-sizing: content-box` — measure its actual width in DevTools. Then add `box-sizing: border-box` — measure again. Write down the difference and explain why.
 
-3. **Normalize button appearance**: Browsers style `<button>` with a platform-native appearance. Add a rule targeting `button` that removes `appearance`, sets `cursor: pointer`, and inherits `color` from the parent. Why is `cursor: pointer` needed? (Hint: `default` is the browser's default for buttons in some browsers.)
+3. **Add table reset rules**: Tables (`<table>`) have two browser defaults that cause problems: `border-collapse: separate` (which creates double borders between cells) and `border-spacing: 2px`. Add rules to the reset that set `border-collapse: collapse` and `border-spacing: 0`. Create a test table with borders to see the difference.
 
-4. **Add a `prefers-reduced-motion` block**: Some users have vestibular disorders or motion sensitivity. Add a `@media (prefers-reduced-motion: reduce)` block that sets `animation-duration: 0.01ms`, `animation-iteration-count: 1`, and `transition-duration: 0.01ms` on `*`. This disables all motion when the user has requested reduced motion in their OS settings.
+4. **Add a button reset**: The `<button>` element still looks like an OS native button after our reset because we didn't reset `appearance`. Add `.btn-reset { appearance: none; background: transparent; border: none; cursor: pointer; }`. Now style a button that looks like a link using this reset class.
 
-5. **Design your own "opinionated reset"**: A reset removes browser defaults. An *opinionated reset* also adds sensible base styles. Design a 15–20 rule opinionated reset that includes: body font stack with system fonts (`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`), `line-height: 1.6` on body, `1rem` paragraph font size, sensible heading sizes using a 1.25 modular scale (ems only, no px), and a `:root` with a `font-size: 100%` baseline. The goal: every page using this reset should look like a readable document without any additional CSS.
+5. **Build your own opinionated reset**: Start with the reset from v3. Add five more rules that set defaults *you personally prefer* — things like a base font-family, a `line-height` you like, or a sensible default `color`. Comment each rule explaining your choice. This becomes your personal starting point for every project.
 
 ---
 
 ## Solutions
 
-### Exercise 1 — Table border collapse
+### Exercise 1 — Explore browser defaults
+
+Example findings (Chrome, macOS):
+
+```
+h1:  font-size: 32px, font-weight: bold, margin-top: 21px, margin-bottom: 21px
+h2:  font-size: 24px, font-weight: bold, margin-top: 19px
+p:   font-size: 16px, margin-top: 16px, margin-bottom: 16px
+ul:  padding-left: 40px, list-style-type: disc
+button: font-family: -apple-system (not body font!), padding: 1px 6px
+input: font-family: -apple-system, border: 2px inset
+```
+
+The most surprising for most beginners: `<button>` and `<input>` use a completely different font family than `<p>`. That's why `font: inherit` is in the reset.
+
+### Exercise 2 — Box model
+
+```html
+<div id="box" style="width:200px; padding:30px; border:10px solid black">
+  I'm a box
+</div>
+```
+
+Without `box-sizing: border-box`:
+```
+Actual width = 200 (content) + 30 (left pad) + 30 (right pad)
+             + 10 (left border) + 10 (right border)
+             = 280px
+```
+
+With `box-sizing: border-box`:
+```
+Actual width = 200px (border and padding are subtracted from content area)
+Content area = 200 - 30 - 30 - 10 - 10 = 120px wide
+But the outer box = exactly 200px
+```
+
+### Exercise 3 — Table reset
 
 ```css
 table {
@@ -414,135 +666,87 @@ table {
 }
 ```
 
-`border-collapse: collapse` merges adjacent cell borders into a single border. `border-spacing: 0` has no visible effect once `collapse` is set (they're mutually exclusive), but it's good practice to zero it out so the table behaves predictably if someone later sets `border-collapse: separate`.
-
+Test:
 ```html
-<!-- Test: -->
 <table style="border: 1px solid black">
   <tr>
-    <td style="border: 1px solid black; padding: 8px">Cell 1</td>
-    <td style="border: 1px solid black; padding: 8px">Cell 2</td>
+    <td style="border: 1px solid black; padding: 8px">Cell A</td>
+    <td style="border: 1px solid black; padding: 8px">Cell B</td>
   </tr>
 </table>
-<!-- Without reset: double border between cells -->
-<!-- With reset: single border between cells -->
 ```
 
-### Exercise 2 — Focus-visible ring
+Without reset: double border between cells (each cell's border + adjacent cell's border = 2px gap).
+With reset: single 1px border between cells.
+
+### Exercise 4 — Button reset
 
 ```css
-/* Remove focus ring for mouse/touch users */
-:focus:not(:focus-visible) {
-  outline: none;
+.btn-reset {
+  appearance: none;        /* remove OS native styling */
+  -webkit-appearance: none;/* same, for older Safari */
+  background: transparent; /* no background */
+  border: none;            /* no border */
+  cursor: pointer;         /* hand cursor on hover */
+  color: inherit;          /* use page text color */
+  font: inherit;           /* use page font */
 }
 
-/* Keep focus ring for keyboard users */
-:focus-visible {
-  outline: 2px solid #005fcc;
-  outline-offset: 2px;
+/* Now style it as a link */
+.link-button {
+  color: #005fcc;
+  text-decoration: underline;
+  padding: 0;
 }
+.link-button:hover { color: #0036a3; }
 ```
 
-`:focus-visible` is a pseudo-class that applies when the browser determines the focus indicator should be visible — typically when the user navigated with a keyboard (Tab key). For mouse clicks, it doesn't apply, so `:focus:not(:focus-visible)` removes the outline for those users. This is the correct accessibility pattern: never remove focus styles entirely, only suppress them when they're not needed.
-
-### Exercise 3 — Button appearance
-
-```css
-button {
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  color: inherit;
-  background: transparent;
-  border: none;
-}
+```html
+<button class="btn-reset link-button">This looks like a link</button>
 ```
-
-`appearance: none` removes the OS-native button look. `cursor: pointer` is needed because some browsers default to `cursor: default` on buttons (the arrow cursor) rather than `cursor: pointer` (the hand). `color: inherit` is required because color is an inherited property, but button elements in some browsers have a browser stylesheet rule that overrides inheritance with the OS button text color.
-
-### Exercise 4 — Reduced motion
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-```
-
-`0.01ms` rather than `0` because some JavaScript libraries check whether `animation-duration` is `0` to determine if animation is disabled and behave differently. `0.01ms` is imperceptibly fast but not `0`. `scroll-behavior: auto` disables smooth scrolling, which can cause motion sickness for users with vestibular disorders.
 
 ### Exercise 5 — Opinionated reset
 
 ```css
-/* ── Opinionated Reset ──────────────────────────────────── */
+/* Opinionated reset — personal preferences */
 
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 :root {
-  font-size: 100%;          /* 1rem = browser default (typically 16px) */
-  -webkit-text-size-adjust: 100%;
-  tab-size: 4;
+  /* I prefer a system font stack — it looks native on every OS */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               sans-serif;
+  font-size: 100%;           /* respect browser font size preference */
+  color-scheme: light dark;  /* support dark mode in browser UI */
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               Helvetica, Arial, sans-serif, "Apple Color Emoji";
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.6;          /* I find 1.6 more comfortable than 1.5 */
+  color: hsl(220 14% 10%);   /* near-black, not pure black */
+  background: hsl(220 14% 97%); /* off-white, not pure white */
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-h1 { font-size: 2.441em; }    /* 1.25^5 */
-h2 { font-size: 1.953em; }    /* 1.25^4 */
-h3 { font-size: 1.563em; }    /* 1.25^3 */
-h4 { font-size: 1.25em;  }    /* 1.25^2 */
-h5 { font-size: 1em;     }    /* 1.25^1 */
-h6 { font-size: 0.8em;   }    /* 1.25^0 */
+/* Comfortable heading sizes — Minor Third scale (1.2) */
+h1 { font-size: 1.728rem; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 1.440rem; font-weight: 600; line-height: 1.25; }
+h3 { font-size: 1.200rem; font-weight: 600; line-height: 1.3; }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  line-height: 1.25;
-  margin-bottom: 0.5em;
-}
+h1, h2, h3, h4, h5, h6 { margin-bottom: 0.5em; }
+p { margin-bottom: 1em; }
+p:last-child { margin-bottom: 0; }  /* no extra space after the last paragraph */
 
-p  { margin-bottom: 1em; }
-p:last-child { margin-bottom: 0; }
+img, picture, video, canvas, svg { display: block; max-width: 100%; }
+input, button, textarea, select   { font: inherit; }
 
-img, picture, video, canvas, svg {
-  display: block;
-  max-width: 100%;
-}
-
-input, button, textarea, select { font: inherit; }
-button { cursor: pointer; }
-
-:focus-visible {
-  outline: 2px solid #005fcc;
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+:focus-visible { outline: 2px solid hsl(217 91% 50%); outline-offset: 2px; }
 ```
-
-The `em`-based heading sizes in `h1`–`h6` are relative to the *element's* font size, not the root. Because we set `font-size: inherit` in nothing (this is the opinionated reset that sets heading sizes), the ems compound from the body `1rem`. The `1.25` ratio is the "Major Third" scale — a common choice for readable text that doesn't get too extreme at the top end.
 
 ---
 
@@ -550,27 +754,27 @@ The `em`-based heading sizes in `h1`–`h6` are relative to the *element's* font
 
 | Concept | Key point |
 |---------|-----------|
-| The cascade | Origin → specificity → source order → inheritance. Browser styles lose to author styles. |
-| `box-sizing: border-box` | Makes `width` the *total* rendered width including padding and border |
-| `*` selector | Zero specificity — any rule you write overrides it |
-| `content-box` vs `border-box` | Default causes padding to expand elements; `border-box` absorbs it |
-| Specificity score | `(IDs, classes/attrs/pseudo-classes, elements)` — higher wins |
-| Inheritance | Typography properties inherit; layout/box properties don't |
-| `font: inherit` on form elements | Browsers override font inheritance for inputs/buttons; this restores it |
-| `display: block` on `<img>` | Removes the inline baseline gap below images |
-| `:focus-visible` | Shows focus ring for keyboard, hides it for mouse — the correct accessibility pattern |
-| `ul[role="list"]` | Only resets list style when the list has semantic role="list" markup |
-| `@media (prefers-reduced-motion)` | Disables animations/transitions for users who need it |
-| `@media print` | Entirely separate stylesheet for print/PDF output |
+| HTML tag | Text inside `<>` that marks up content. Opening `<p>` + closing `</p>` wraps content. |
+| CSS rule | selector `{ property: value; }` — picks elements and styles them |
+| Browser defaults | Every browser has built-in CSS; resets remove it for a clean slate |
+| Box model | margin → border → padding → content; four layers around every element |
+| `box-sizing: border-box` | Makes `width` include padding and border — predictable layout math |
+| `*` selector | Matches every element; zero specificity — anything overrides it |
+| Specificity | Type (0,0,1) < class (0,1,0) < ID (1,0,0) < inline |
+| Cascade | Browser → author → inline → `!important`; your rules beat browser defaults |
+| Inheritance | `color`, `font-*` pass to children; `margin`, `padding`, `background` do not |
+| `font: inherit` | Form elements override font inheritance; this restores it |
+| `display: block` on `<img>` | Removes the invisible gap below inline images |
+| `:focus-visible` | Focus ring for keyboard users; hidden for mouse clicks — always include this |
 
 ---
 
 ## Building with Claude
 
 Bad prompt:
-> "How do I fix button styles in CSS?"
+> "How do I style my website?"
 
 Good prompt:
-> "I'm building a CSS reset in plain CSS (no frameworks). I have `font: inherit` on form elements and `appearance: none` on buttons. A `<button>` inside a `<form>` still shows the OS system border in Safari. My reset rule is `button { appearance: none; -webkit-appearance: none; border: none; }`. Is there a Safari-specific property I'm missing, or is something in my cascade overriding the reset? The button has no class or id — it's a plain `<button>Submit</button>`."
+> "I'm building a CSS reset in a single `.html` file. I set `box-sizing: border-box` on `*` and `font: inherit` on form elements, but my `<button>` in Safari still uses the OS font rather than my body font. My `<body>` has `font-family: 'Inter', sans-serif`. Is `font: inherit` not enough for Safari buttons, or is something in my specificity overriding it? Here's my current rule: `input, button, textarea, select { font: inherit; }`"
 
-The good prompt shows your exact rules, names the browser, describes the visual symptom, and asks a specific question. Claude's answer will be about *your* button rule — not a generic tutorial on button styling.
+The good prompt shows your exact code, names the browser where the problem occurs, and asks one specific question. You'll get a targeted answer, not a tutorial.

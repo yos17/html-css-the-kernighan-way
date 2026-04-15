@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Own Animation Library — Chapter 7</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   THE LIBRARY: miniAnimate
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+body { line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+/* ── Keyframes ──────────────────────────────────────────────────────── */
+@keyframes fadeIn       { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeOut      { from { opacity: 1 } to { opacity: 0 } }
+@keyframes slideInUp    { from { transform: translateY(24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes slideInDown  { from { transform: translateY(-24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes slideInLeft  { from { transform: translateX(-24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes slideInRight { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes zoomIn       { from { transform: scale(0.85); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+@keyframes zoomOut      { from { transform: scale(1.15); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+@keyframes bounceIn {
+  0%   { transform: scale(0);    opacity: 0 }
+  60%  { transform: scale(1.1);  opacity: 1 }
+  80%  { transform: scale(0.95) }
+  100% { transform: scale(1) }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0)   }
+  20%       { transform: translateX(-8px) }
+  40%       { transform: translateX(8px)  }
+  60%       { transform: translateX(-6px) }
+  80%       { transform: translateX(6px)  }
+}
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1) }
+  14%       { transform: scale(1.3) }
+  28%       { transform: scale(1) }
+  42%       { transform: scale(1.3) }
+  70%       { transform: scale(1) }
+}
+@keyframes spin        { to { transform: rotate(360deg) } }
+@keyframes ping        { 75%,100% { transform: scale(2); opacity: 0 } }
+@keyframes pulse       { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+@keyframes bounce      { 0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8,0,1,1) } 50% { transform: translateY(-20px); animation-timing-function: cubic-bezier(0,0,0.2,1) } }
+@keyframes float       { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+@keyframes wiggle      { 0%, 100% { transform: rotate(0deg) } 25% { transform: rotate(-10deg) } 75% { transform: rotate(10deg) } }
+@keyframes flip        { from { transform: perspective(400px) rotateY(90deg); opacity: 0 } to { transform: perspective(400px) rotateY(0); opacity: 1 } }
+@keyframes typewriter  { from { width: 0 } to { width: 100% } }
+@keyframes blink       { 50% { border-color: transparent } }
+
+/* ── Animation utility classes ──────────────────────────────────────── */
+.animate { animation-fill-mode: both; }
+
+.anim-fade-in     { animation: fadeIn      0.3s ease both }
+.anim-fade-out    { animation: fadeOut     0.3s ease both }
+.anim-slide-up    { animation: slideInUp   0.4s ease both }
+.anim-slide-down  { animation: slideInDown 0.4s ease both }
+.anim-slide-left  { animation: slideInLeft 0.4s ease both }
+.anim-slide-right { animation: slideInRight 0.4s ease both }
+.anim-zoom-in     { animation: zoomIn      0.35s ease both }
+.anim-zoom-out    { animation: zoomOut     0.35s ease both }
+.anim-bounce-in   { animation: bounceIn    0.6s cubic-bezier(0.34,1.56,0.64,1) both }
+.anim-shake       { animation: shake       0.5s ease }
+.anim-heartbeat   { animation: heartbeat   1.3s ease infinite }
+.anim-spin        { animation: spin        1s linear infinite }
+.anim-ping        { animation: ping        1s cubic-bezier(0,0,0.2,1) infinite }
+.anim-pulse       { animation: pulse       2s ease-in-out infinite }
+.anim-bounce      { animation: bounce      1s infinite }
+.anim-float       { animation: float       3s ease-in-out infinite }
+.anim-wiggle      { animation: wiggle      0.5s ease infinite }
+.anim-flip        { animation: flip        0.5s ease both }
+
+/* Duration */
+.dur-75   { animation-duration:  75ms }
+.dur-150  { animation-duration: 150ms }
+.dur-300  { animation-duration: 300ms }
+.dur-500  { animation-duration: 500ms }
+.dur-700  { animation-duration: 700ms }
+.dur-1000 { animation-duration: 1000ms }
+
+/* Delay */
+.delay-100 { animation-delay: 100ms }
+.delay-200 { animation-delay: 200ms }
+.delay-300 { animation-delay: 300ms }
+.delay-500 { animation-delay: 500ms }
+
+/* Easing */
+.ease-bounce { animation-timing-function: cubic-bezier(0.34,1.56,0.64,1) }
+.ease-spring  { animation-timing-function: cubic-bezier(0.175,0.885,0.32,1.275) }
+
+/* GPU hint */
+.will-animate { will-change: transform, opacity }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+  }
+}
+
+/* ── Skeleton ────────────────────────────────────────────────────────── */
+.skeleton {
+  background:    #e2e8f0;
+  border-radius: 4px;
+  animation:     pulse 1.5s ease-in-out infinite;
+}
+.skeleton-text   { height: 0.875em; width: 100%; margin-bottom: 0.4em; border-radius: 3px }
+.skeleton-title  { height: 1.2em;   width: 55% }
+.skeleton-avatar { width: 40px; height: 40px; border-radius: 50% }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DEMO STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --font-base:    system-ui, sans-serif;
+  --font-mono:    ui-monospace, monospace;
+  --color-text:   #1e293b;
+  --color-muted:  #64748b;
+  --color-bg:     #f8fafc;
+  --color-surface:#ffffff;
+  --color-border: #e2e8f0;
+  --color-accent: #8b5cf6;
+  --radius:       0.5rem;
+}
+
+body { font-family: var(--font-base); background: var(--color-bg); color: var(--color-text); }
+.page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.25rem; }
+h2 { font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem; }
+p  { font-size: 0.9rem; color: var(--color-muted); margin-bottom: 1rem; }
+.section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+
+.anim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.anim-card {
+  background:     #f5f3ff;
+  border:         1px solid #ddd6fe;
+  border-radius:  var(--radius);
+  padding:        1rem 0.75rem;
+  cursor:         pointer;
+  text-align:     center;
+  user-select:    none;
+  transition:     border-color 0.15s, background 0.15s;
+}
+.anim-card:hover { background: #ede9fe; border-color: #c4b5fd; }
+.anim-card:active { transform: scale(0.97); }
+
+.anim-icon  { font-size: 2rem; display: block; margin-bottom: 0.4rem; line-height: 1; }
+.anim-name  { font-size: 0.72rem; font-family: var(--font-mono); color: var(--color-accent); font-weight: 600; }
+.anim-desc  { font-size: 0.68rem; color: var(--color-muted); margin-top: 0.2rem; }
+
+/* Infinite demos */
+.infinite-row { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; padding: 1rem 0; }
+.demo-box {
+  width: 48px; height: 48px; border-radius: 8px;
+  background: var(--color-accent); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+}
+.demo-label { font-size: 0.75rem; font-family: var(--font-mono); color: var(--color-muted); text-align: center; margin-top: 0.25rem; }
+.demo-col { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+
+/* Typewriter */
+.typewriter-demo {
+  overflow:    hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--color-accent);
+  width:        fit-content;
+  font-size:    1.2rem;
+  font-family:  var(--font-mono);
+  animation:
+    typewriter 3s steps(35, end) both,
+    blink 0.75s step-end infinite;
+}
+
+/* Skeleton demo */
+.skeleton-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  max-width: 320px;
+}
+.skeleton-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
+.skeleton-lines  { display: flex; flex-direction: column; }
+
+/* Stagger */
+.stagger-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.stagger-item {
+  background:    #f5f3ff;
+  border:        1px solid #ddd6fe;
+  border-radius: 6px;
+  padding:       0.625rem 1rem;
+  font-size:     0.875rem;
+  opacity:       0;
+  transform:     translateX(-20px);
+  transition:    opacity 0.4s ease, transform 0.4s ease;
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.stagger-item.visible { opacity: 1; transform: translateX(0); }
+
+/* Transition demo */
+.transition-demo { display: flex; gap: 1rem; flex-wrap: wrap; }
+.t-box {
+  width: 80px; height: 80px; border-radius: 8px;
+  background: var(--color-accent); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-family: var(--font-mono);
+  text-align: center; cursor: pointer; padding: 0.25rem;
+}
+
+.t-fade       { transition: opacity 0.3s ease }
+.t-fade:hover { opacity: 0.3 }
+
+.t-scale       { transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) }
+.t-scale:hover { transform: scale(1.2) }
+
+.t-rotate       { transition: transform 0.3s ease }
+.t-rotate:hover { transform: rotate(45deg) }
+
+.t-slide       { transition: transform 0.3s ease }
+.t-slide:hover { transform: translateY(-8px) }
+
+.t-color       { transition: background 0.3s ease }
+.t-color:hover { background: #16a34a }
+
+.t-all       { transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1) }
+.t-all:hover { transform: scale(1.1) rotate(5deg); background: #dc2626 }
+
+code {
+  font-family: var(--font-mono);
+  background:  var(--color-bg);
+  border:      1px solid var(--color-border);
+  padding:     0.1em 0.3em;
+  border-radius: 3px;
+  font-size:   0.875em;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Build Your Own Animation Library</h1>
+  <p style="color:var(--color-muted);margin-bottom:2rem">Chapter 7 — Transitions, keyframes, transforms, performance</p>
+
+  <!-- ─── TRANSITION DEMOS ─────────────────────────────────────────── -->
+  <div class="section">
+    <h2>CSS Transitions</h2>
+    <p>Hover each box. Transitions smooth property changes triggered by state.</p>
+    <div class="transition-demo">
+      <div class="demo-col"><div class="t-box t-fade">opacity</div><span class="demo-label">fade</span></div>
+      <div class="demo-col"><div class="t-box t-scale">scale</div><span class="demo-label">scale</span></div>
+      <div class="demo-col"><div class="t-box t-rotate">rotate</div><span class="demo-label">rotate</span></div>
+      <div class="demo-col"><div class="t-box t-slide">slide</div><span class="demo-label">translateY</span></div>
+      <div class="demo-col"><div class="t-box t-color">color</div><span class="demo-label">background</span></div>
+      <div class="demo-col"><div class="t-box t-all">all</div><span class="demo-label">all</span></div>
+    </div>
+  </div>
+
+  <!-- ─── ENTRANCE ANIMATIONS ─────────────────────────────────────── -->
+  <div class="section">
+    <h2>Entrance Animations</h2>
+    <p>Click any card to replay its animation.</p>
+    <div class="anim-grid" id="entrance-grid"></div>
+  </div>
+
+  <!-- ─── INFINITE ANIMATIONS ─────────────────────────────────────── -->
+  <div class="section">
+    <h2>Infinite Animations</h2>
+    <p>Continuous animations for loading states and UI feedback.</p>
+    <div class="infinite-row" id="infinite-row"></div>
+  </div>
+
+  <!-- ─── TYPEWRITER ───────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Typewriter Effect</h2>
+    <p><code>animation: typewriter steps(n) + blink step-end infinite</code></p>
+    <div class="typewriter-demo" id="typewriter">Build Your Own Animation Library</div>
+  </div>
+
+  <!-- ─── STAGGER ──────────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Stagger Pattern</h2>
+    <p>CSS custom property <code>--i</code> drives <code>calc(var(--i) * 70ms)</code> delay. Click to replay.</p>
+    <ul class="stagger-list" id="stagger-list">
+      <li class="stagger-item">Chapter 1 — Build Your Own Reset</li>
+      <li class="stagger-item">Chapter 2 — Build Your Own Grid System</li>
+      <li class="stagger-item">Chapter 3 — Build Your Own Flexbox Engine</li>
+      <li class="stagger-item">Chapter 4 — Build Your Own Component Library</li>
+      <li class="stagger-item">Chapter 5 — Build Your Own Form Framework</li>
+    </ul>
+    <button id="stagger-btn" style="margin-top:0.75rem;padding:0.4rem 1rem;background:var(--color-accent);color:white;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem">Replay Stagger</button>
+  </div>
+
+  <!-- ─── SKELETON LOADER ──────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Skeleton Loading Screen</h2>
+    <p>The <code>pulse</code> animation uses <code>opacity</code> — composited by GPU, always smooth.</p>
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-avatar"></div>
+        <div style="flex:1">
+          <div class="skeleton skeleton-text skeleton-title"></div>
+          <div class="skeleton skeleton-text" style="width:40%"></div>
+        </div>
+      </div>
+      <div class="skeleton-lines">
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text" style="width:75%"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Entrance animation cards ───────────────────────────────────────
+const entranceAnims = [
+  { name: 'anim-fade-in',     icon: '👻', label: 'fadeIn',      desc: 'opacity 0→1' },
+  { name: 'anim-slide-up',    icon: '⬆️', label: 'slideInUp',   desc: 'translateY + fade' },
+  { name: 'anim-slide-down',  icon: '⬇️', label: 'slideInDown', desc: 'translateY- + fade' },
+  { name: 'anim-slide-left',  icon: '⬅️', label: 'slideInLeft', desc: 'translateX + fade' },
+  { name: 'anim-slide-right', icon: '➡️', label: 'slideInRight',desc: 'translateX+ + fade' },
+  { name: 'anim-zoom-in',     icon: '🔍', label: 'zoomIn',      desc: 'scale .85→1 + fade' },
+  { name: 'anim-zoom-out',    icon: '🔎', label: 'zoomOut',     desc: 'scale 1.15→1 + fade' },
+  { name: 'anim-bounce-in',   icon: '🏀', label: 'bounceIn',    desc: 'scale overshoot' },
+  { name: 'anim-shake',       icon: '🤝', label: 'shake',       desc: 'translateX oscillate' },
+  { name: 'anim-flip',        icon: '🔄', label: 'flip',        desc: 'perspective rotateY' },
+];
+
+const grid = document.getElementById('entrance-grid');
+entranceAnims.forEach(({ name, icon, label, desc }) => {
+  const card = document.createElement('div');
+  card.className = 'anim-card';
+  card.innerHTML = `<span class="anim-icon ${name}">${icon}</span>
+    <div class="anim-name">.${label.replace(/([A-Z])/g, '-$1').toLowerCase()}</div>
+    <div class="anim-desc">${desc}</div>`;
+
+  card.addEventListener('click', () => {
+    const iconEl = card.querySelector('.anim-icon');
+    iconEl.classList.remove(name);
+    void iconEl.offsetWidth;  // force reflow to restart animation
+    iconEl.classList.add(name);
+  });
+
+  grid.appendChild(card);
+});
+
+// ─── Infinite animation row ─────────────────────────────────────────
+const infiniteAnims = [
+  { name: 'anim-spin',      icon: '⚙️', label: 'spin'      },
+  { name: 'anim-pulse',     icon: '💜', label: 'pulse'     },
+  { name: 'anim-bounce',    icon: '🟣', label: 'bounce'    },
+  { name: 'anim-float',     icon: '🎈', label: 'float'     },
+  { name: 'anim-heartbeat', icon: '❤️', label: 'heartbeat' },
+  { name: 'anim-wiggle',    icon: '✋', label: 'wiggle'    },
+];
+
+const row = document.getElementById('infinite-row');
+infiniteAnims.forEach(({ name, icon, label }) => {
+  const col = document.createElement('div');
+  col.className = 'demo-col';
+  col.innerHTML = `<div class="demo-box ${name}">${icon}</div>
+    <span class="demo-label">.${label}</span>`;
+  row.appendChild(col);
+});
+
+// ─── Stagger ────────────────────────────────────────────────────────
+const items = document.querySelectorAll('.stagger-item');
+items.forEach((el, i) => el.style.setProperty('--i', i));
+
+function runStagger() {
+  items.forEach(el => el.classList.remove('visible'));
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    items.forEach(el => el.classList.add('visible'))
+  ));
+}
+
+document.getElementById('stagger-btn').addEventListener('click', runStagger);
+runStagger();
+
+// ─── Typewriter restart on click ────────────────────────────────────
+const tw = document.getElementById('typewriter');
+tw.addEventListener('click', () => {
+  tw.style.animation = 'none';
+  void tw.offsetWidth;
+  tw.style.animation = '';
+});
+</script>
+</body>
+</html>
