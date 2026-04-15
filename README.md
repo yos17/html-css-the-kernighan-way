@@ -40,9 +40,9 @@ No npm. No frameworks. No build tools. Every chapter uses a single `.html` file 
 | 2 | [Build Your Own Type Scale](chapters/02_type_scale/) | A readable text system | `rem`, `clamp()`, text sizing, line height |
 | 3 | [Build Your Own Color System](chapters/03_color_system/) | A reusable color palette | HSL, custom properties, semantic color tokens |
 | 4 | [Build Your Own Layout Engine](chapters/04_layout_engine/) | A small flexbox + grid utility set | layout axes, alignment, spacing, grid columns |
-| 5 | [Build Your Own Animation Library](chapters/07_animations/) | Reusable motion classes | transitions, keyframes, transforms |
-| 6 | [Build Your Own Form Framework](chapters/08_forms/) | Better-looking, more usable forms | labels, inputs, focus, validation |
-| 7 | [Build Your Own CSS Debug Tool](chapters/12_debug/) | A visual CSS debugging toolkit | box model debugging, overflow, stacking, diagnosis |
+| 5 | [Build Your Own Animation Library](chapters/05_animations/) | Reusable motion classes | transitions, keyframes, transforms |
+| 6 | [Build Your Own Form Framework](chapters/06_forms/) | Better-looking, more usable forms | labels, inputs, focus, validation |
+| 7 | [Build Your Own CSS Debug Tool](chapters/07_debug/) | A visual CSS debugging toolkit | box model debugging, overflow, stacking, diagnosis |
 
 ## Chapter Order
 
