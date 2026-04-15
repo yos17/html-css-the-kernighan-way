@@ -1,12 +1,12 @@
 # Chapter 4 — Build Your Own Layout Engine
 
-Before CSS Grid and Flexbox, web layouts were built from floats and absolute positioning — hacks borrowed from print and desktop UI that were never designed for the web. Today's layout model is built for the web: Flexbox for one-dimensional alignment, CSS Grid for two-dimensional structure. In this chapter you build a layout library that exposes both systems as a composable set of utilities. By the end, you'll understand not just the syntax but *why* the axis model works the way it does, why `auto` margins absorb space, and how `fr` units distribute space without overflow.
+Layout is where many beginners get stuck. You add `display: flex`, then try random combinations of `justify-content` and `align-items` until something looks right. This chapter slows that down. You will build a small layout system and learn one idea at a time: direction, spacing, alignment, and grid columns.
 
 ---
 
 ## The Problem
 
-The naive approach to layout is writing custom CSS for every container:
+A beginner usually starts by writing one-off layout CSS for each section:
 
 ```css
 .header    { display: flex; justify-content: space-between; align-items: center; }
@@ -15,7 +15,7 @@ The naive approach to layout is writing custom CSS for every container:
 .centered  { display: grid; place-items: center; }
 ```
 
-This works, but the knowledge is trapped in component-specific CSS. When you look at `.card-grid`, you don't see a pattern — you see an incantation. Understanding layout means seeing that `justify-content: space-between` distributes space along the *main axis*, and `align-items: center` centers on the *cross axis*, and those axes flip when you change `flex-direction`. The two rules are the same rule applied to two different axes.
+This can work, but it is hard to learn from. You solve one layout, but you do not learn the pattern behind it. The important idea is simple: flexbox works on two axes. One axis is the direction items flow. The other axis is across that flow. Once that clicks, many layout rules stop feeling random.
 
 ---
 

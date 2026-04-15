@@ -1,103 +1,194 @@
 # Chapter 2 — Build Your Own Type Scale
 
-Typography is the first thing a visitor perceives about a page. Before they read a word, the ratio of heading to body text, the spacing between lines, and the relationship between sizes communicate whether a page is professional, playful, authoritative, or amateurish. In this chapter you build a fluid type scale from scratch — a system of six sizes derived from a single ratio, each of which grows and shrinks fluidly with the viewport using `clamp()`. You'll understand exactly how Tailwind's `text-sm`, `text-lg`, `text-2xl` work, and why they're defined the way they are.
+Text is usually the first thing people notice on a page. If the text is too small, too large, or inconsistent, the whole page feels wrong. In this chapter, you will build a simple type scale: a small set of text sizes that work well together. The goal is not fancy typography. The goal is to stop guessing and start using a system.
+
+---
+
+## Before We Start: What Is `font-size`?
+
+Open the HTML file from Chapter 1 and add one line of CSS:
+
+```html
+<style>
+  p {
+    font-size: 24px;
+  }
+</style>
+```
+
+That's a font size. `px` means **pixels** — screen pixels. On a typical monitor, `16px` is the default browser font size for body text. At that size, most people can read comfortably. `24px` is 50% bigger.
+
+**Try it now**: write a `<p>` tag with some text. Change `font-size` between `10px`, `16px`, `24px`, and `48px`. See how the text grows.
+
+### What's wrong with `px` for fonts?
+
+Pixels feel straightforward. But they have a serious problem.
+
+Most browsers have an **accessibility setting** that lets users make all text larger. Someone with low vision might set their default font size to `20px` instead of `16px`. When you use `font-size: 16px`, that user's preference is *ignored* — the text stays at 16px no matter what. You've overridden their accessibility setting.
+
+```
+Browser default font size setting: 20px  (user set this)
+Your CSS: font-size: 16px  ← ignores user preference
+Result: text is 16px — user can't read it comfortably
+```
+
+### The solution: `rem`
+
+`rem` stands for **root em**. It means "relative to the root font size" — the `<html>` element's font size, which is the browser's default (typically 16px).
+
+```
+Browser default font size: 16px
+
+1rem   = 16px   (same as default)
+1.5rem = 24px   (1.5 × 16)
+2rem   = 32px   (2 × 16)
+0.75rem= 12px   (0.75 × 16)
+```
+
+With `rem`, if a user sets their browser default to `20px`:
+
+```
+Browser font size: 20px
+
+1rem   = 20px   (scales up automatically!)
+1.5rem = 30px
+2rem   = 40px
+```
+
+Your text scales with their preference. That's accessibility.
 
 ---
 
 ## The Problem
 
-The naive approach to type sizing is to pick pixel values that look right on your screen:
+Beginners often write CSS like this:
 
 ```css
-h1 { font-size: 32px; }
-h2 { font-size: 24px; }
-h3 { font-size: 20px; }
-body { font-size: 16px; }
+h1 { font-size: 36px; }
+h2 { font-size: 28px; }
+h3 { font-size: 22px; }
+p  { font-size: 16px; }
 ```
 
-Three problems:
+Three problems show up quickly:
 
-1. **Arbitrary numbers**: why 32? why not 36? There's no system — each size is a guess.
-2. **No responsiveness**: on a phone, 32px headings are too large. On a wide monitor, they feel small. You need media queries for every size.
-3. **Accessibility**: a user who increases their browser's default font size (a common accessibility accommodation) gets no benefit — pixel sizes don't scale with the browser setting.
+1. **The numbers are guesses**. Why `36px`? Why not `32px`? There is no rule behind it.
+2. **It does not adapt well**. A size that looks fine on your laptop may feel too large on a phone.
+3. **Fixed pixels ignore user preferences**. If someone increases their browser text size for readability, fixed pixel values fight against that.
 
-A type scale solves all three:
+A **type scale** solves this by giving your text sizes a simple relationship. Instead of picking every size by feel, you start with one base size and grow from there:
 
 ```
-A scale is a ratio applied repeatedly from a base size.
-Base: 1rem (browser default, respects user's font size preference)
-Ratio: 1.25 (Major Third — harmonious but not extreme)
+Start with: base = 1rem (scales with browser preference)
+            ratio = 1.25 (each step is 25% bigger)
 
-Scale:
-  xs:   base ÷ ratio²   = 0.64rem  ~10px
-  sm:   base ÷ ratio    = 0.80rem  ~13px
-  base: 1rem             = 1rem     ~16px
-  lg:   base × ratio    = 1.25rem  ~20px
-  xl:   base × ratio²   = 1.563rem ~25px
-  2xl:  base × ratio³   = 1.953rem ~31px
-  3xl:  base × ratio⁵   = 3.052rem ~49px
+Sizes going up:
+  1rem × 1.25⁰ = 1.000rem  ← body text
+  1rem × 1.25¹ = 1.250rem  ← slightly larger
+  1rem × 1.25² = 1.563rem  ← medium heading
+  1rem × 1.25³ = 1.953rem  ← large heading
+  1rem × 1.25⁵ = 3.052rem  ← hero heading
+
+Sizes going down:
+  1rem ÷ 1.25¹ = 0.800rem  ← small text
+  1rem ÷ 1.25² = 0.640rem  ← captions
 ```
+
+The sizes have a built-in relationship — they're harmonious rather than arbitrary.
 
 ---
 
 ## Building It Step by Step
 
-### v1 — Static Scale with `rem`
+### v1 — A Simple Static Scale
 
-Start with the scale as pure custom properties. Every size is derived from the base and the ratio:
+Let's start with the simplest version: a set of size variables using `rem`.
+
+First, a new concept: **CSS custom properties** (also called CSS variables). They let you name a value and reuse it:
 
 ```css
-/* v1: static scale — sizes relative to user's browser default */
 :root {
-  --ratio: 1.25;
-
-  --text-xs:   0.64rem;    /* 1 ÷ 1.25² */
-  --text-sm:   0.80rem;    /* 1 ÷ 1.25  */
-  --text-base: 1rem;       /* baseline  */
-  --text-lg:   1.25rem;    /* 1 × 1.25  */
-  --text-xl:   1.563rem;   /* 1 × 1.25² */
-  --text-2xl:  1.953rem;   /* 1 × 1.25³ */
-  --text-3xl:  3.052rem;   /* 1 × 1.25⁵ */
+  --text-base: 1rem;       /* define the variable */
+  --text-lg:   1.25rem;
+  --text-xl:   1.563rem;
 }
 
-h1 { font-size: var(--text-3xl); }
-h2 { font-size: var(--text-2xl); }
-h3 { font-size: var(--text-xl); }
-p  { font-size: var(--text-base); }
+p  { font-size: var(--text-base); }   /* use the variable */
+h2 { font-size: var(--text-xl); }
 ```
 
-`rem` means "root em" — it's relative to the `<html>` element's font size, which defaults to the browser's setting (typically 16px). If a user sets their browser default to 20px, every `rem` size scales up proportionally. Pixel sizes don't do this.
+`--text-base` is the variable name (always starts with `--`). `var(--text-base)` reads its value.
 
-### v2 — Fluid Scale with `clamp()`
+`var()` syntax: `var(--variable-name)`.
 
-A static scale looks good on one viewport width. At small screens, the large sizes are too big. At large screens, they could be bigger. `clamp()` makes each size fluid:
+`:root` is a selector that matches the `<html>` element — it's the highest point in the CSS inheritance tree. Custom properties defined on `:root` are available everywhere on the page.
+
+Here's the full static scale:
 
 ```css
-/* v2: fluid scale — sizes grow with viewport between min and max */
+/* v1: a static type scale using CSS custom properties and rem */
 :root {
-  /* clamp(MIN, PREFERRED, MAX)
-     PREFERRED is a viewport-relative expression that
-     slides between MIN and MAX as the viewport changes. */
-
-  --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw,  0.90rem);
-  --text-base: clamp(1rem,     0.95rem + 0.25vw,  1.125rem);
-  --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,   1.375rem);
-  --text-xl:   clamp(1.25rem,  1rem    + 1vw,     1.75rem);
-  --text-2xl:  clamp(1.5rem,   1rem    + 2vw,     2.25rem);
-  --text-3xl:  clamp(2rem,     1rem    + 4vw,     3.5rem);
+  --text-xs:   0.64rem;    /* extra small: captions, fine print */
+  --text-sm:   0.80rem;    /* small: secondary text */
+  --text-base: 1rem;       /* base: body text */
+  --text-lg:   1.25rem;    /* large: lead text */
+  --text-xl:   1.563rem;   /* extra large: h3-level headings */
+  --text-2xl:  1.953rem;   /* 2x large: h2-level headings */
+  --text-3xl:  3.052rem;   /* 3x large: h1, hero headings */
 }
 ```
 
-At 320px viewport: `--text-3xl` = `2rem` (the minimum). At 1200px viewport: approaches `3.5rem`. In between: linearly interpolated. No media queries needed.
+These numbers come from repeatedly multiplying `1rem` by `1.25` (the ratio).
 
-### v3 — Full System with Line Heights and Spacing
+**Try it**: create a heading at `var(--text-3xl)` and body text at `var(--text-base)`. The relationship between them should feel balanced — not too dramatic, not too subtle.
 
-A type scale isn't just sizes. Line height, letter spacing, and the spacing between type elements all need to be part of the system:
+### v2 — Make It Fluid with `clamp()`
+
+The static scale looks good on one screen width. But on a phone, `3.052rem` (about 49px) for a heading is too large. On a wide monitor, it might feel small.
+
+`clamp()` makes a value fluid — it slides between a minimum and maximum as the viewport changes:
+
+```
+clamp(MINIMUM, PREFERRED, MAXIMUM)
+```
+
+- Below the minimum: value stays at MINIMUM
+- Above the maximum: value stays at MAXIMUM
+- In between: value follows the PREFERRED formula
+
+```css
+/* v2: fluid sizing with clamp() */
+:root {
+  --text-base: clamp(1rem,  0.95rem + 0.25vw,  1.125rem);
+  --text-xl:   clamp(1.25rem, 1rem  + 1vw,     1.75rem);
+  --text-3xl:  clamp(2rem,  1rem    + 4vw,     3.5rem);
+}
+```
+
+What is `vw`? It means **1% of the viewport width**. So `4vw` at a 400px viewport = 16px. At a 1200px viewport, `4vw` = 48px.
+
+**Reading `clamp(2rem, 1rem + 4vw, 3.5rem)` out loud**:
+- "Minimum size is 2rem (about 32px)"
+- "Preferred: 1rem plus 4% of the viewport width — this grows with the screen"
+- "Maximum size is 3.5rem (about 56px)"
+
+At a 320px mobile screen: `1rem + 4vw = 16px + 12.8px ≈ 29px` → clamped to `32px` (minimum)
+At a 1200px desktop: `1rem + 4vw = 16px + 48px = 64px` → clamped to `56px` (maximum)
+
+**Try it**: open `type-scale.html` and drag the viewport width slider. Watch the sizes change fluidly.
+
+### v3 — Add Line Heights and Letter Spacing
+
+Font size alone isn't enough. A complete type system also controls:
+
+- **Line height**: the space between lines of text
+- **Letter spacing**: the space between individual letters
+- **Font weight**: how bold the text is
 
 ```css
 /* v3: complete type system */
 :root {
-  /* ── Sizes ─────────────────────────────────── */
+  /* ── Sizes ────────────────────────────────────── */
   --text-xs:   clamp(0.64rem,  0.60rem + 0.2vw,  0.75rem);
   --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw, 0.90rem);
   --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
@@ -106,81 +197,60 @@ A type scale isn't just sizes. Line height, letter spacing, and the spacing betw
   --text-2xl:  clamp(1.5rem,   1rem    + 2vw,    2.25rem);
   --text-3xl:  clamp(2rem,     1rem    + 4vw,    3.5rem);
 
-  /* ── Line heights ──────────────────────────── */
-  --leading-none:   1;      /* headings, logos */
-  --leading-tight:  1.25;   /* display text */
-  --leading-snug:   1.375;  /* subheadings */
-  --leading-normal: 1.5;    /* body copy */
-  --leading-relaxed:1.625;  /* long-form reading */
-  --leading-loose:  2;      /* captions, footnotes */
+  /* ── Line heights ──────────────────────────────── */
+  --leading-tight:   1.25;   /* for headings */
+  --leading-normal:  1.5;    /* for body text */
+  --leading-relaxed: 1.625;  /* for long reading */
 
-  /* ── Letter spacing ─────────────────────────── */
-  --tracking-tight:  -0.05em;
-  --tracking-normal:  0em;
-  --tracking-wide:    0.05em;
-  --tracking-widest:  0.15em;
+  /* ── Letter spacing ─────────────────────────────── */
+  --tracking-tight:  -0.03em;  /* tighter: large headings */
+  --tracking-normal:  0em;     /* default */
+  --tracking-wide:    0.05em;  /* looser: small labels */
 
-  /* ── Font weight ────────────────────────────── */
+  /* ── Font weights ────────────────────────────────── */
   --font-normal:  400;
   --font-medium:  500;
   --font-semibold:600;
   --font-bold:    700;
 }
+```
 
-/* Apply the system: */
+Applying the system:
+
+```css
 h1 {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  line-height: var(--leading-tight);
+  font-size:      var(--text-3xl);
+  font-weight:    var(--font-bold);
+  line-height:    var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
 
 p {
-  font-size: var(--text-base);
+  font-size:   var(--text-base);
   font-weight: var(--font-normal);
   line-height: var(--leading-normal);
-  letter-spacing: var(--tracking-normal);
+}
+
+.label {
+  font-size:      var(--text-sm);
+  font-weight:    var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
 }
 ```
+
+**Try it**: apply these to a page with a heading, a paragraph, and a label. Adjust the line heights — notice how `1.25` feels cramped for body text but right for headings, and `1.625` feels spacious.
 
 ---
 
 ## The Complete Program
 
-`type-scale.html` — open in your browser. Drag the viewport slider to see the fluid scaling in real time. Click any size token to copy it.
+`type-scale.html` — open in your browser. Three views:
+- **Tokens**: see all sizes at the current viewport width
+- **Specimen**: see each size in context (hero, heading, body, caption)
+- **Scale**: compare the sizes visually as bars
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Build Your Own Type Scale — Chapter 2</title>
-<!-- styles in type-scale.html -->
-</head>
-<body>
-<style>
-/* ═══════════════════════════════════════════════════════════════════════
-   THE LIBRARY: miniTypeScale
-   ═══════════════════════════════════════════════════════════════════════ */
-:root {
-  --text-xs:   clamp(0.64rem,  0.60rem + 0.2vw,  0.75rem);
-  --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw, 0.90rem);
-  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
-  --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
-  --text-xl:   clamp(1.25rem,  1rem    + 1vw,    1.75rem);
-  --text-2xl:  clamp(1.5rem,   1rem    + 2vw,    2.25rem);
-  --text-3xl:  clamp(2rem,     1rem    + 4vw,    3.5rem);
-
-  --leading-tight:  1.25;
-  --leading-normal: 1.5;
-  --leading-loose:  2;
-
-  --tracking-tight:   -0.05em;
-  --tracking-normal:   0em;
-  --tracking-widest:   0.15em;
-}
-</style>
-</body>
-</html>
-```
+Drag the "Root" slider to simulate a user with a larger browser font size — watch all sizes scale proportionally.
 
 ---
 
@@ -188,258 +258,285 @@ p {
 
 ### `rem` vs `em` vs `px`
 
-Three unit options for font sizes — each with different reference points:
+Three units, three reference points:
 
 ```
-px  — absolute pixels. Ignores browser default. Ignores user preferences.
-      h1 { font-size: 32px } → always 32px, even if user needs larger text.
+px  = absolute pixels
+      font-size: 16px  → always 16 pixels
+      Doesn't scale with browser preferences. Avoid for font sizes.
 
-em  — relative to the CURRENT element's font-size.
-      Cascades: body 16px → div 1.5em (24px) → p 1.5em (36px!) — compounds!
+em  = relative to the CURRENT element's font-size
+      If body is 16px, and p has font-size: 1.5em → p is 24px
+      If that p has a span with font-size: 1.5em → span is 36px (compounds!)
+      Cascades and compounds. Useful for padding/margin on components,
+      but dangerous for font-size nesting.
 
-rem — relative to the ROOT element's font-size (usually browser default: 16px).
-      Doesn't compound. 1.5rem is always 1.5 × root.
-      Respects user's browser font-size setting.
+rem = relative to the ROOT font-size (the <html> element)
+      If browser default is 16px:
+        1.5rem = 24px  (always, no matter how deep in the HTML)
+      If user sets browser to 20px:
+        1.5rem = 30px  (scales automatically!)
+      Doesn't compound. Best choice for font sizes.
 ```
 
-`rem` is the right unit for a type scale. It's predictable (no compounding), it respects user preferences, and the math is simple: `1.25rem` is always `1.25 × root`.
+**Rule of thumb**: use `rem` for font sizes. Use `em` for spacing that should scale with the element's font (like `padding: 0.5em` on a button — the padding grows with the button's text). Use `px` sparingly, only for things that should never scale (like a 1px border).
 
-### `clamp()` — Three Arguments
+### How `clamp()` Works
 
 ```
-clamp(MINIMUM, PREFERRED, MAXIMUM)
-         ↑          ↑          ↑
-    never smaller  fluid    never larger
-    than this      value    than this
+clamp(MIN, PREFERRED, MAX)
+
+     MIN = the smallest the value ever gets
+MAX = the largest the value ever gets
+     PREFERRED = how it grows in between
+
+When viewport is narrow:   value = MAX(MIN, PREFERRED) → usually MIN
+When viewport is wide:     value = MIN(MAX, PREFERRED) → usually MAX
+In between:                value = PREFERRED (grows linearly)
 ```
 
-The PREFERRED is usually a `vw` (viewport width) expression:
+The PREFERRED is usually written as `Xrem + Yvw` — a fixed base plus a fraction of the viewport:
 
 ```css
-font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+clamp(1rem,  0.95rem + 0.25vw,  1.125rem)
+      │      │         │         │
+      │      └─ fixed  └─ grows  │
+      │        base    w/ screen └─ maximum
+      └─ minimum
 ```
 
-At 320px viewport:  `0.95rem + 0.25 × 3.2px = 0.95rem + 0.8px ≈ 1rem`   → clamps to `1rem`
-At 1200px viewport: `0.95rem + 0.25 × 12px  = 0.95rem + 3px   ≈ 1.14rem` → approaches `1.125rem`
-
-The `vw` unit is `1/100` of the viewport width. So `1vw` at 1200px = 12px.
+At `320px` wide:  `0.95rem + 0.25 × 3.2px = 0.95rem + 0.8px ≈ 1rem`  → min (1rem)
+At `1200px` wide: `0.95rem + 0.25 × 12px  = 0.95rem + 3px ≈ 1.14rem` → between min and max
+At `1600px` wide: `0.95rem + 0.25 × 16px  = 0.95rem + 4px ≈ 1.2rem`  → max (1.125rem)
 
 ### Modular Scale — The Math
 
-A modular scale is a geometric sequence: each value is the previous multiplied by a fixed ratio.
+A **modular scale** is a geometric sequence — each step is the previous one multiplied by a fixed ratio.
+
+Why does this produce harmonious sizes? Because the sizes have a mathematical relationship to each other. Music theory uses the same idea: notes that are pleasing together share simple frequency ratios.
+
+Common ratios for type scales:
 
 ```
-ratio = 1.25 (Major Third in musical intervals)
-
-base = 1rem
-
-1rem × 1.25⁰ = 1.000rem  → --text-base
-1rem × 1.25¹ = 1.250rem  → --text-lg
-1rem × 1.25² = 1.563rem  → --text-xl
-1rem × 1.25³ = 1.953rem  → --text-2xl
-1rem × 1.25⁴ = 2.441rem
-1rem × 1.25⁵ = 3.052rem  → --text-3xl
-
-Going down (dividing instead of multiplying):
-1rem ÷ 1.25¹ = 0.800rem  → --text-sm
-1rem ÷ 1.25² = 0.640rem  → --text-xs
+Ratio  Name              Effect
+─────────────────────────────────────────────────────────────
+1.067  Minor Second      Very subtle — barely any contrast
+1.125  Major Second      Gentle — good for dense UIs
+1.200  Minor Third       Moderate — works well in tight spaces
+1.250  Major Third       Standard — the default in this book
+1.333  Perfect Fourth    Good contrast — headings stand out
+1.414  Augmented Fourth  Dramatic — bold, editorial feel
+1.500  Perfect Fifth     Very dramatic — large displays
+1.618  Golden Ratio      Extreme — headlines vs. body very different
 ```
 
-Common ratios and their names:
+To compute the scale at ratio 1.25:
 ```
-1.067 — Minor Second  (very subtle — caption to body)
-1.125 — Major Second  (tight, editorial)
-1.200 — Minor Third   (good for dense UIs)
-1.250 — Major Third   (default, readable web)
-1.333 — Perfect Fourth (headings stand out well)
-1.414 — Augmented Fourth / √2
-1.500 — Perfect Fifth  (dramatic contrast)
-1.618 — Golden Ratio   (very dramatic)
-```
+Base:   1rem
+× 1.25: 1.250rem    → --text-lg
+× 1.25: 1.563rem    → --text-xl  (1.250 × 1.25)
+× 1.25: 1.953rem    → --text-2xl (1.563 × 1.25)
+× 1.25: 2.441rem    (skip — too close to 3xl)
+× 1.25: 3.052rem    → --text-3xl (2.441 × 1.25)
 
-### Line Height
-
-Line height controls the vertical space between lines of text. The optimal range for readability:
-
-```
---leading-tight:  1.25  ← headings (few lines, large size)
---leading-normal: 1.5   ← body copy (multiple lines)
---leading-relaxed:1.625 ← long-form reading
+Going down:
+÷ 1.25: 0.800rem    → --text-sm  (1 ÷ 1.25)
+÷ 1.25: 0.640rem    → --text-xs  (0.800 ÷ 1.25)
 ```
 
-Why no units? `line-height: 1.5` (unitless) means 1.5× the *current* font size. `line-height: 1.5rem` means 1.5× the *root* font size. For text, you almost always want unitless — the leading should scale with the text size.
+### Line Height — No Units
+
+Line height controls space between lines. The value `1.5` means "1.5 times the current font size":
 
 ```css
-/* Unitless: scales with font size */
-h1 { font-size: 3rem; line-height: 1.25; }
-/* line-height = 3rem × 1.25 = 3.75rem */
+p {
+  font-size: 1rem;    /* 16px */
+  line-height: 1.5;   /* 24px — 1.5 × 16px */
+}
 
-p  { font-size: 1rem; line-height: 1.5; }
-/* line-height = 1rem × 1.5  = 1.5rem */
+h1 {
+  font-size: 3rem;    /* 48px */
+  line-height: 1.25;  /* 60px — 1.25 × 48px */
+}
 ```
 
-### Letter Spacing
+Notice: **no unit on the line-height number**. `line-height: 1.5` (unitless) vs. `line-height: 1.5rem` (with unit) is a significant difference:
 
-Letter spacing is relative to the font size using `em`:
+- `line-height: 1.5` → 1.5× the *current* font-size (scales with font)
+- `line-height: 1.5rem` → 1.5× the *root* font-size (doesn't scale)
+
+For text, you almost always want the unitless version. Large text should have large line spacing; small text should have proportionally smaller spacing.
+
+**Optimal ranges**:
+- `1.1–1.3` for large headings (few words, big size — tight feels intentional)
+- `1.4–1.6` for body copy (comfortable reading at paragraph length)
+- `1.6–2.0` for dense technical text or small sizes
+
+### Letter Spacing in `em`
+
+Letter spacing (`letter-spacing` property) uses `em` — relative to the *current* font size:
 
 ```css
---tracking-tight:   -0.05em;  /* Bring letters closer — large headings */
---tracking-normal:   0em;     /* Default — body text */
---tracking-wide:     0.05em;  /* Open — medium UI labels */
---tracking-widest:   0.15em;  /* All-caps abbreviations, tags */
+h1 { letter-spacing: -0.03em; }
+/* On a 48px heading: -0.03 × 48 = -1.44px tighter per letter */
+
+.badge { letter-spacing: 0.08em; }
+/* On a 12px badge: 0.08 × 12 = 0.96px wider per letter */
 ```
 
-Using `em` means the spacing scales proportionally with font size. A `0.05em` gap on a 3rem heading is much larger in pixels than `0.05em` on 1rem body text — which is exactly what you want.
+Using `em` means the absolute spacing is always proportional to the font size. If you wrote `letter-spacing: -2px`, it would be way too tight on small text and barely noticeable on a giant heading. With `em`, it scales correctly.
+
+**Common patterns**:
+- Large headings often need `-0.02em` to `-0.04em` (tighter) — they look too spread-out at big sizes
+- Body text needs `0em` — don't touch it
+- All-caps labels need `0.05em` to `0.1em` (wider) — all-caps words look cramped without extra spacing
 
 ---
 
-## Guided Try It — Add a Fluid Spacing Scale
+## Guided Try It — Add a Monospace Scale for Code
 
-**The goal**: extend the type scale with a spacing scale — padding, margin, and gap values that use the same harmonic ratios as the type.
+**The goal**: add a separate set of size tokens for `<code>` and `<pre>` elements. Monospace fonts render slightly larger visually than proportional fonts at the same pixel size, so code text should be about 90% of the corresponding regular size.
 
-**Why this is useful**: when type and spacing use the same ratios, layouts feel coherent. Tailwind's spacing scale and type scale aren't identical, but they're both derived from a consistent base unit.
+**Why this is useful**: every technical blog, documentation site, and developer tool needs to style code blocks. Getting the size right makes code readable without dominating the surrounding text.
 
-**Step 1 — Define the spacing tokens**
-
-```css
-:root {
-  /* Base: 0.25rem (4px at default root size) */
-  --space-1:  0.25rem;   /*  4px */
-  --space-2:  0.5rem;    /*  8px */
-  --space-3:  0.75rem;   /* 12px */
-  --space-4:  1rem;      /* 16px */
-  --space-5:  1.25rem;   /* 20px */
-  --space-6:  1.5rem;    /* 24px */
-  --space-8:  2rem;      /* 32px */
-  --space-10: 2.5rem;    /* 40px */
-  --space-12: 3rem;      /* 48px */
-  --space-16: 4rem;      /* 64px */
-  --space-20: 5rem;      /* 80px */
-  --space-24: 6rem;      /* 96px */
-}
-```
-
-**Step 2 — Make them fluid with `clamp()`**
+**Step 1 — Add code size tokens**
 
 ```css
 :root {
-  --space-4:  clamp(0.75rem,  0.5rem  + 1vw, 1rem);
-  --space-8:  clamp(1.5rem,   1rem    + 2vw, 2rem);
-  --space-16: clamp(3rem,     2rem    + 4vw, 4rem);
+  /* Code sizes: ~90% of the corresponding text size */
+  --code-sm:   calc(var(--text-sm)   * 0.9);
+  --code-base: calc(var(--text-base) * 0.9);
+  --code-lg:   calc(var(--text-lg)   * 0.9);
 }
 ```
 
-**Step 3 — Use them in components**
+`calc()` is a CSS function that does math. `calc(var(--text-base) * 0.9)` means "90% of the text-base size". You can mix units: `calc(1rem + 4px)` works.
+
+**Step 2 — Apply to code elements**
 
 ```css
-.card {
-  padding: var(--space-6);
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
+code, kbd {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: var(--code-base);
+  background: hsl(220 14% 93%);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
 }
 
-section {
-  padding-block: var(--space-16);
+pre {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: var(--code-sm);   /* slightly smaller for code blocks */
+  line-height: var(--leading-relaxed);
+  padding: 1em;
+  overflow-x: auto;
 }
 ```
 
-**Think about it**: fluid spacing and fluid type interact. If the heading text shrinks on small screens, should the space around it also shrink? Usually yes — but not always. A call-to-action button might want consistent padding regardless of viewport. How would you create a "fixed" version of each token (e.g., `--space-4-fixed: 1rem`) alongside the fluid version?
+**Step 3 — Test it**
+
+```html
+<p>Use the <code>font-size</code> property to set text size.</p>
+
+<pre>
+:root {
+  --text-base: 1rem;
+}
+</pre>
+```
+
+**Think about it**: why does `var(--code-base)` use `calc()` with `* 0.9` instead of just hardcoding a number like `0.9rem`? Because if someone changes `--text-base` (say, to make body text larger for an accessibility reason), the code font automatically scales with it. Hardcoding `0.9rem` would break that relationship.
 
 ---
 
 ## Exercises
 
-1. **Add a `--text-4xl` size**: Extend the scale with a fourth extra-large size — `clamp(2.5rem, 1rem + 6vw, 5rem)`. Test: use it for a hero heading and resize the viewport.
+1. **Convert a pixel design to rem**: You have a design spec with these pixel sizes: `h1: 40px`, `h2: 32px`, `h3: 24px`, `p: 16px`, `small: 13px`. Convert each to `rem` (assuming the browser default is 16px). Now write them as custom property tokens following the naming convention in this chapter.
 
-2. **Create a monospace scale**: Add a separate set of size tokens for `<code>` elements. Monospace fonts tend to look larger than proportional fonts at the same size, so a monospace scale should use approximately 90% of the corresponding size: `--code-base: calc(var(--text-base) * 0.9)`. Define `--code-sm`, `--code-base`, and `--code-lg`.
+2. **Build a fluid heading**: Use `clamp()` to make `--text-3xl` fluid between `2rem` at 320px viewport and `4rem` at 1400px viewport. Work out the formula: `clamp(2rem, Xrem + Yvw, 4rem)` by solving for X and Y. (Hint: at 320px, `X + Y×3.2 = 32px`; at 1400px, `X + Y×14 = 64px`.)
 
-3. **Calculate the fluid `vw` midpoint**: For `clamp(1rem, X + Yvw, 1.125rem)`, find the `X` and `Y` values that produce exactly `1rem` at 320px and exactly `1.125rem` at 1200px. Use algebra: `1rem = X + Y×3.2px`, `1.125rem = X + Y×12px`. If `1rem = 16px`, solve for `X` (in rem) and `Y`.
+3. **Add a display size**: Add an eighth size, `--text-display`, for use in hero sections or landing page banners. It should be larger than `--text-3xl`. Use `clamp()` with a minimum of `3rem` and a maximum of `6rem`. Apply it to an `<h1>` on a demo page.
 
-4. **Add optical size adjustments**: Large headings need tighter letter spacing to look right; small text needs looser. Create a mixin-style approach using CSS custom properties: define `--h1-tracking: -0.02em`, `--h2-tracking: -0.01em`, `--body-tracking: 0em`, and apply them to the appropriate heading levels.
+4. **Explore font stacks**: A font stack is a list of fonts as fallbacks: `font-family: 'Playfair Display', Georgia, serif`. If the first font isn't installed, the browser tries the next one. Create three font stacks: one for headlines (a serif or display font), one for body text (a sans-serif), and one for code (a monospace). Test each on a page of text.
 
-5. **Build a type specimen page**: Using only the type scale tokens (no hardcoded sizes), create an HTML page that demonstrates every size in context: a hero section with `--text-3xl`, a subheading in `--text-xl`, body paragraphs in `--text-base`, captions in `--text-sm`, footnotes in `--text-xs`. Apply appropriate line heights and letter spacing from the scale. No hardcoded values — every size must use a custom property.
+5. **Build a complete type specimen**: Create an HTML page that demonstrates every token from the complete v3 system. For each size, show: the actual text at that size (use a sentence like "The quick brown fox"), the token name, and the computed pixel value at the default font size. Style it cleanly so it could serve as a design reference.
 
 ---
 
 ## Solutions
 
-### Exercise 1 — `--text-4xl`
+### Exercise 1 — Convert to rem
+
+```
+h1: 40px  ÷ 16px = 2.5rem   → --text-4xl (or add to existing scale)
+h2: 32px  ÷ 16px = 2rem     → --text-3xl (close enough to 2.044rem)
+h3: 24px  ÷ 16px = 1.5rem   → --text-2xl (close to 1.953rem)
+p:  16px  ÷ 16px = 1rem     → --text-base
+small: 13px ÷ 16px = 0.8125rem → --text-sm (close to 0.8rem)
+```
 
 ```css
 :root {
-  --text-4xl: clamp(2.5rem, 1rem + 6vw, 5rem);
-}
-
-/* Usage: */
-.hero-heading {
-  font-size: var(--text-4xl);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  --text-sm:   0.8125rem;   /* 13px */
+  --text-base: 1rem;         /* 16px */
+  --text-2xl:  1.5rem;       /* 24px */
+  --text-3xl:  2rem;         /* 32px */
+  --text-4xl:  2.5rem;       /* 40px */
 }
 ```
 
-At 320px: `1rem + 6×3.2px = 1rem + 19.2px ≈ 2.2rem` → clamped to `2.5rem`
-At 1200px: `1rem + 6×12px = 1rem + 72px ≈ 5.5rem` → clamped to `5rem`
+### Exercise 2 — Fluid heading formula
 
-### Exercise 2 — Monospace scale
+Solve the system of equations:
+```
+At 320px:   X + Y × 3.2  = 32   (2rem = 32px at 16px root)
+At 1400px:  X + Y × 14   = 64   (4rem = 64px)
+
+Subtract:   Y × (14 - 3.2) = 64 - 32
+            Y × 10.8 = 32
+            Y ≈ 2.963
+
+X = 32 - 2.963 × 3.2 ≈ 32 - 9.48 ≈ 22.52px ≈ 1.41rem
+
+Result: clamp(2rem, 1.41rem + 2.963vw, 4rem)
+```
+
+### Exercise 3 — Display size
 
 ```css
 :root {
-  /* Monospace looks ~10% larger, so reduce by 10% */
-  --code-xs:   calc(var(--text-xs)   * 0.9);
-  --code-sm:   calc(var(--text-sm)   * 0.9);
-  --code-base: calc(var(--text-base) * 0.9);
-  --code-lg:   calc(var(--text-lg)   * 0.9);
+  --text-display: clamp(3rem, 1rem + 8vw, 6rem);
 }
 
-code, pre, kbd {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: var(--code-base);
-  line-height: var(--leading-relaxed);
+.hero-title {
+  font-size: var(--text-display);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
 }
 ```
 
-### Exercise 3 — Fluid midpoint calculation
+At 320px:  `1rem + 8×3.2px = 1rem + 25.6px ≈ 2.6rem` → clamps to 3rem
+At 1200px: `1rem + 8×12px = 1rem + 96px = 7rem` → clamps to 6rem
 
-Given: minimum `1rem` at 320px, maximum `1.125rem` at 1200px. Using `16px = 1rem`:
-
-```
-At 320px:  X + Y × 3.2  = 16px    (1rem = 16px)
-At 1200px: X + Y × 12   = 18px    (1.125rem = 16 × 1.125)
-
-Subtract:  Y × (12 - 3.2) = 18 - 16
-           Y × 8.8 = 2
-           Y = 2 / 8.8 ≈ 0.2273
-
-X = 16 - 0.2273 × 3.2 ≈ 16 - 0.727 ≈ 15.27px ≈ 0.954rem
-
-Result: clamp(1rem, 0.954rem + 0.2273vw, 1.125rem)
-```
-
-### Exercise 4 — Optical size adjustments
+### Exercise 4 — Font stacks
 
 ```css
 :root {
-  --h1-tracking: -0.03em;
-  --h2-tracking: -0.02em;
-  --h3-tracking: -0.01em;
-  --body-tracking: 0em;
-  --small-tracking: 0.01em;
-  --cap-tracking: 0.08em;    /* for all-caps labels */
+  /* Headline font: elegant serif with fallbacks */
+  --font-headline: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+
+  /* Body font: clean sans-serif, system-font based */
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Code font: monospace with wide support */
+  --font-code: 'JetBrains Mono', 'Fira Code', 'Courier New',
+               Courier, monospace;
 }
 
-h1 { letter-spacing: var(--h1-tracking); }
-h2 { letter-spacing: var(--h2-tracking); }
-h3 { letter-spacing: var(--h3-tracking); }
-p  { letter-spacing: var(--body-tracking); }
-
-.label-caps {
-  font-size: var(--text-sm);
-  letter-spacing: var(--cap-tracking);
-  text-transform: uppercase;
-  font-weight: 600;
-}
+body { font-family: var(--font-body); }
+h1, h2, h3 { font-family: var(--font-headline); }
+code, pre, kbd { font-family: var(--font-code); }
 ```
 
 ### Exercise 5 — Type specimen page
@@ -449,33 +546,45 @@ p  { letter-spacing: var(--body-tracking); }
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Type Specimen</title>
 <style>
-  :root {
-    --text-xs:   clamp(0.64rem,  0.60rem + 0.2vw,  0.75rem);
-    --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw, 0.90rem);
-    --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
-    --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
-    --text-xl:   clamp(1.25rem,  1rem    + 1vw,    1.75rem);
-    --text-2xl:  clamp(1.5rem,   1rem    + 2vw,    2.25rem);
-    --text-3xl:  clamp(2rem,     1rem    + 4vw,    3.5rem);
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Georgia, serif; line-height: 1.5; padding: 2rem; max-width: 65ch; }
-
-  .hero     { font-size: var(--text-3xl); line-height: 1.1; letter-spacing: -0.02em; font-weight: 800; margin-bottom: 0.5em; }
-  .subhead  { font-size: var(--text-xl);  line-height: 1.3; font-weight: 400; color: #555; margin-bottom: 2em; }
-  .body     { font-size: var(--text-base); line-height: 1.6; margin-bottom: 1em; }
-  .caption  { font-size: var(--text-sm);  line-height: 1.4; color: #666; margin-bottom: 0.5em; }
-  .footnote { font-size: var(--text-xs);  line-height: 1.4; color: #888; }
+:root {
+  --text-xs:   clamp(0.64rem,  0.60rem + 0.2vw,  0.75rem);
+  --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw, 0.90rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
+  --text-xl:   clamp(1.25rem,  1rem    + 1vw,    1.75rem);
+  --text-2xl:  clamp(1.5rem,   1rem    + 2vw,    2.25rem);
+  --text-3xl:  clamp(2rem,     1rem    + 4vw,    3.5rem);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Georgia, serif; padding: 2rem; color: #111; }
+.sample { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #ddd; }
+.meta { font-size: 0.75rem; color: #888; font-family: monospace; margin-top: 4px; }
 </style>
 </head>
 <body>
-  <p class="hero">The quick brown fox</p>
-  <p class="subhead">A fluid type system in pure CSS</p>
-  <p class="body">Body text uses --text-base with line-height 1.6 for comfortable reading at paragraph length. Resize the viewport to see the fluid scaling.</p>
-  <p class="caption">Caption text at --text-sm, used for image descriptions and secondary information.</p>
-  <p class="footnote">Footnote text at --text-xs — smallest readable size, for legal copy and fine print.</p>
+<div class="sample">
+  <div style="font-size:var(--text-3xl);font-weight:800;line-height:1.1">The quick brown fox</div>
+  <div class="meta">--text-3xl · clamp(2rem, 1rem + 4vw, 3.5rem)</div>
+</div>
+<div class="sample">
+  <div style="font-size:var(--text-2xl);font-weight:700;line-height:1.2">The quick brown fox</div>
+  <div class="meta">--text-2xl · clamp(1.5rem, 1rem + 2vw, 2.25rem)</div>
+</div>
+<div class="sample">
+  <div style="font-size:var(--text-base);line-height:1.6">
+    Body text at --text-base. Comfortable for reading at paragraph length.
+    Resize the viewport to see the fluid scaling.
+  </div>
+  <div class="meta">--text-base · clamp(1rem, 0.95rem + 0.25vw, 1.125rem)</div>
+</div>
+<div class="sample">
+  <div style="font-size:var(--text-xs);line-height:1.4;color:#555">
+    Fine print and footnotes at --text-xs.
+  </div>
+  <div class="meta">--text-xs · clamp(0.64rem, 0.60rem + 0.2vw, 0.75rem)</div>
+</div>
 </body>
 </html>
 ```
@@ -486,23 +595,25 @@ p  { letter-spacing: var(--body-tracking); }
 
 | Concept | Key point |
 |---------|-----------|
-| `rem` unit | Relative to root font size; respects user browser settings; doesn't compound |
-| `em` unit | Relative to *current* font size; compounds when nested |
-| `px` for type | Ignores user font preferences — avoid for font sizes |
-| Modular scale | Geometric sequence from a base × ratio; produces harmonious size relationships |
-| `clamp(min, pref, max)` | Fluid sizing between two extremes; the preferred value is usually a `vw` expression |
-| `vw` unit | 1/100 of viewport width; used in `clamp()` preferred values for fluid scaling |
-| Unitless `line-height` | Scales with current font size; almost always correct for text |
-| `letter-spacing` in `em` | Scales proportionally with font size; larger text gets more absolute spacing |
-| Custom property for type | `var(--text-xl)` is a contract: a name, not a value |
-| Major Third ratio (1.25) | Common modular scale ratio; harmonious without being extreme |
+| `font-size` | Controls text size; `px`, `rem`, `em` are common units |
+| Why not `px` for fonts | Ignores user's browser font-size accessibility setting |
+| `rem` | Relative to root (`<html>`) font size; respects user preferences; doesn't compound |
+| `em` | Relative to *current element's* font size; compounds in nested elements |
+| CSS custom property | `--name: value` defines a variable; `var(--name)` uses it |
+| `:root` | Selector for the `<html>` element; variables defined here are globally available |
+| Modular scale | Geometric sequence: each step = previous × ratio; produces harmonious sizes |
+| `clamp(min, pref, max)` | Fluid value: grows with viewport between a minimum and maximum |
+| `vw` unit | 1% of viewport width; used in `clamp()` to create viewport-responsive sizes |
+| `line-height` unitless | Unitless value scales with font size; always use this for text |
+| `letter-spacing` in `em` | Scales proportionally with font size |
+| `calc()` | CSS arithmetic: `calc(var(--text-base) * 0.9)` |
 
 ---
 
 ## Building with Claude
 
 Bad prompt:
-> "What font size should I use for headings?"
+> "How do I make my text responsive?"
 
 Good prompt:
-> "I'm building a fluid type scale using `clamp()` and CSS custom properties. My `--text-3xl` is `clamp(2rem, 1rem + 4vw, 3.5rem)`. At 320px viewport this produces 2rem (correct — that's my minimum), but at 768px it produces `2.92rem` and I want it to be closer to `2.5rem` at that breakpoint. I'm using `1rem = 16px`. Should I adjust the `vw` coefficient or the fixed offset, and what's the formula for making the preferred value hit a specific size at a specific viewport width?"
+> "I'm building a fluid type scale with `clamp()` in plain CSS. My `--text-3xl` is `clamp(2rem, 1rem + 4vw, 3.5rem)`. At a 1400px viewport I want the maximum to be exactly `4rem`, but the clamp hits `3.5rem` first. If I change the max to `4rem`, the `vw` coefficient `4vw` reaches `3.5rem` already at 1200px and then the value is flat from 1200px to 1400px instead of continuing to grow. Should I increase the `vw` coefficient and lower the max, or is there a better approach for hitting a target value at a specific breakpoint?"

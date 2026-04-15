@@ -1,6 +1,6 @@
 # Chapter 3 — Build Your Own Color System
 
-Color is the fastest communication channel a UI has. Before a user reads a word, color has already told them whether a button is primary or secondary, whether a message is a warning or an error, whether a form field is valid or invalid. But most stylesheets define colors as scattered hex values — `#3b82f6` here, `#2563eb` there — with no relationship between them and no system for dark mode. In this chapter you build a color system from scratch: a palette derived from a single hue, structured into semantic tokens, and wired for both light and dark modes using CSS custom properties.
+Beginners often choose colors one by one: one blue for a button, another blue for a link, another blue for a border. That works for five minutes, then the stylesheet becomes hard to control. In this chapter, you will build a simple color system so related colors stay related and the page feels consistent.
 
 ---
 
@@ -19,15 +19,19 @@ The naive approach: pick colors as you go, defining them wherever you use them.
 .success          { color: #22c55e; }
 ```
 
-Three problems:
+Three problems appear quickly:
 
-1. **No relationships**: `#3b82f6`, `#2563eb`, and `#1d4ed8` are three shades of blue — but there's nothing in the code that says so. When the brand color changes, you search-and-replace hex values across dozens of files.
+1. **The colors have no structure**. You know they are all blue, but the code does not say that clearly.
+2. **Changes are painful**. If you want a different brand color later, you must hunt through the whole stylesheet.
+3. **Dark mode becomes messy**. Every hard-coded color has to be replaced by hand.
 
-2. **No dark mode**: each color was chosen for a light background. Creating a dark mode means overriding every single rule.
+A color system fixes this by doing three simple things:
 
-3. **No accessibility guarantee**: those hex values might fail WCAG contrast requirements. If you don't know the system, you can't check it systematically.
+- define colors in one place
+- give them names based on their job
+- reuse those names everywhere else
 
-A color system solves all three by defining colors in one place, giving them semantic names, and making them swappable at the `:root` level:
+That way, one change at the top can update the whole page:
 
 ```
 Raw palette:  blue-500: hsl(217 91% 60%)
