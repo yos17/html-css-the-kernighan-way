@@ -84,6 +84,19 @@ Keep the browser open the whole time.
 
 Change values. Break layouts. Slow animations down. Try ugly colors on purpose. The browser is your lab.
 
+A good beginner reading order inside each chapter is:
+
+- first, ask what the page should look like
+- second, identify which HTML creates the structure
+- third, identify which CSS controls the visual behavior
+- only after that, worry about abstraction or utility systems
+
+If a chapter feels hard, reduce it to this:
+
+- HTML says what the thing is
+- CSS says how the thing looks or moves
+- the browser shows you whether your mental model was right
+
 ## How AI Fits In
 
 AI is part of the workflow in this book, but not a substitute for judgment.
@@ -218,6 +231,9 @@ Then focus on these truths:
 You do not need elite taste.
 
 You need:
+
+- enough patience to test one visual change at a time
+- enough curiosity to inspect what the browser is already doing
 
 - enough taste to reject bad output
 - enough HTML/CSS understanding to direct good output

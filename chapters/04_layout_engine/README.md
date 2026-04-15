@@ -2,9 +2,16 @@
 
 Layout is where many beginners get stuck. You add `display: flex`, then try random combinations of `justify-content` and `align-items` until something looks right. This chapter slows that down. You will build a small layout system and learn one idea at a time: direction, spacing, alignment, and grid columns.
 
+If layout has felt random to you before, that is normal. This chapter is here to make layout feel mechanical instead of magical.
+
 ---
 
 ## The Problem
+
+A useful beginner habit is to ask two questions before touching the CSS:
+
+- should these items flow in one direction or two?
+- am I aligning items, or am I sizing the structure itself?
 
 A beginner usually starts by writing one-off layout CSS for each section:
 
@@ -22,6 +29,8 @@ This can work, but it is hard to learn from. You solve one layout, but you do no
 ## Building It Step by Step
 
 ### v1 — Flexbox Utilities
+
+The main beginner breakthrough in flexbox is understanding the two axes. Once you know which axis is the main one, `justify-content` and `align-items` stop feeling like random spell names.
 
 The Flexbox model has one key concept: the main axis and the cross axis.
 
@@ -103,6 +112,8 @@ CSS Grid is two-dimensional. The key concepts are tracks, lines, and placement:
 ```
 
 `auto-fill` with `minmax(200px, 1fr)` creates an automatically responsive grid. At 600px viewport: 3 columns of ≥200px each. At 400px: 2 columns. At 300px: 1 column. No media queries.
+
+In plain English: each card wants to be at least 200px wide. If there is room for more cards in a row, the grid makes more columns. If not, it wraps naturally.
 
 ### v3 — Composition and Centering
 

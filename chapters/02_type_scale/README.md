@@ -2,6 +2,8 @@
 
 Text is usually the first thing people notice on a page. If the text is too small, too large, or inconsistent, the whole page feels wrong. In this chapter, you will build a simple type scale: a small set of text sizes that work well together. The goal is not fancy typography. The goal is to stop guessing and start using a system.
 
+If you are a beginner, keep the chapter goal simple: make headings, body text, and small text feel related instead of random.
+
 ---
 
 ## Before We Start: What Is `font-size`?
@@ -34,6 +36,8 @@ Result: text is 16px — user can't read it comfortably
 
 ### The solution: `rem`
 
+A good beginner way to think about `rem` is: it is a size that respects the browser’s default text size instead of hard-forcing your own.
+
 `rem` stands for **root em**. It means "relative to the root font size" — the `<html>` element's font size, which is the browser's default (typically 16px).
 
 ```
@@ -60,6 +64,8 @@ Your text scales with their preference. That's accessibility.
 ---
 
 ## The Problem
+
+The deeper lesson here is that visual systems are easier to manage than isolated values. Type scale is your first example of that.
 
 Beginners often write CSS like this:
 
@@ -143,6 +149,8 @@ These numbers come from repeatedly multiplying `1rem` by `1.25` (the ratio).
 **Try it**: create a heading at `var(--text-3xl)` and body text at `var(--text-base)`. The relationship between them should feel balanced — not too dramatic, not too subtle.
 
 ### v2 — Make It Fluid with `clamp()`
+
+`clamp()` looks scary the first time you see it, but the idea is simple: never go below this size, prefer this flexible size, and never go above that size.
 
 The static scale looks good on one screen width. But on a phone, `3.052rem` (about 49px) for a heading is too large. On a wide monitor, it might feel small.
 

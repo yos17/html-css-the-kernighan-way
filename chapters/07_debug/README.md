@@ -2,11 +2,15 @@
 
 Every CSS bug comes down to one of five things: unexpected inheritance, a specificity conflict, a collapsed dimension, overflow clipping, or stacking context confusion. That is the complete list. CSS does not have mysterious undefined behavior — it has a deterministic cascade, a precise box model, and a well-specified stacking algorithm. When something looks wrong, the cause is always in one of those five categories, and the fix requires understanding which one you are dealing with.
 
+If that sounds intense, here is the beginner version: CSS bugs are usually not random. There is usually a specific layout, cascade, or box-model reason.
+
 This chapter builds `debug.css`, a CSS debugging toolkit. Starting from the classic `* { outline: 1px solid red }` one-liner, we will build a systematic visual layer that makes invisible structure visible — collapsed elements, overflowing content, negative margins, z-index relationships, and stacking contexts. Then we build a JavaScript-powered inspector: hover any element to see its computed box model, its inherited properties, its specificity chain, and the CSS rules applying to it — the same information the browser's DevTools provides, embedded directly in your page.
 
 The skill you are building is not "how to fix CSS." It is how to diagnose CSS — how to look at a broken layout and immediately identify which of the five categories the bug belongs to, then apply the right investigation technique. Debugging CSS without this mental model is guessing. With it, it is engineering.
 
 ## The Problem
+
+A good beginner debugging habit is to stop guessing and start asking: is this a sizing problem, a spacing problem, an overflow problem, or a layering problem?
 
 The naive approach to CSS debugging is trial and error: change a value, refresh, change it back, try something else. This works for trivial problems and fails for everything else. A collapsed height that is caused by a parent with `overflow: hidden` creating a new block formatting context — you cannot fix that by guessing at heights. A z-index that does not work because the element's parent has a lower stacking context — you cannot fix that by increasing `z-index` to 9999. Guessing escalates the problem rather than solving it.
 
@@ -17,6 +21,8 @@ The real problem is that most CSS developers have never built a complete mental 
 ## Building It Step by Step
 
 ### v1: The Classic Debug Pattern — Outlines
+
+This is a great beginner trick because it makes invisible structure visible immediately.
 
 The oldest CSS debugging technique: add a visible stroke to every element. Always `outline`, never `border`.
 
@@ -56,6 +62,8 @@ The oldest CSS debugging technique: add a visible stroke to every element. Alway
 ```
 
 The `outline` vs `border` distinction is not a preference. It is a fact: `outline` is drawn outside the border box, does not participate in the document flow, and does not affect layout. Adding `outline: 1px solid red` to a precisely sized element will not break it. Adding `border: 1px solid red` to an element with `box-sizing: content-box` will.
+
+In plain English: use `outline` for debugging because it shows structure without changing the layout you are trying to inspect.
 
 ### v2: Systematic Debug Layer
 

@@ -2,9 +2,13 @@
 
 Beginners often choose colors one by one: one blue for a button, another blue for a link, another blue for a border. That works for five minutes, then the stylesheet becomes hard to control. In this chapter, you will build a simple color system so related colors stay related and the page feels consistent.
 
+If color feels intimidating, do not think like a designer yet. Think like a programmer building a reusable naming system.
+
 ---
 
 ## The Problem
+
+The beginner-friendly lesson is not “memorize color theory.” It is “stop hard-coding unrelated values everywhere.”
 
 The naive approach: pick colors as you go, defining them wherever you use them.
 
@@ -87,6 +91,10 @@ By keeping hue constant and varying lightness, the palette has an inherent harmo
 
 ### v2 — Semantic Tokens
 
+This is the most important idea in the chapter.
+
+A semantic token names the job a color does, not just the pigment you happened to pick today.
+
 The palette is raw material. Semantic tokens give names to the *roles* colors play:
 
 ```css
@@ -120,6 +128,8 @@ The palette is raw material. Semantic tokens give names to the *roles* colors pl
 ```
 
 Now `.button { background: var(--color-primary) }` — it uses the role, not the raw color. If the brand color changes from blue to purple, you update one variable in the palette and one alias in the semantic layer. Everything else is untouched.
+
+In plain English: name colors by purpose, not by accident.
 
 ### v3 — Dark Mode with `prefers-color-scheme`
 

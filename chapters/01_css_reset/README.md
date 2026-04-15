@@ -2,6 +2,12 @@
 
 Let's start at the very beginning. If you've never written HTML or CSS before, this chapter is for you.
 
+This chapter does three beginner jobs at once:
+
+- it explains what HTML is
+- it explains what CSS is
+- it shows why browsers do visual things before you write any CSS yourself
+
 ---
 
 ## What Is HTML?
@@ -34,6 +40,11 @@ There are tags for headings (`<h1>` through `<h6>`), paragraphs (`<p>`), links (
 ---
 
 ## What Is CSS?
+
+A helpful beginner mental model is:
+
+- HTML creates boxes and meaning
+- CSS changes how those boxes look and behave visually
 
 CSS is the language that tells a browser *how things should look*. Without CSS, every webpage looks like a plain text document. With CSS, you can change colors, sizes, fonts, spacing — everything visual.
 
@@ -105,6 +116,10 @@ In this book, every chapter is a single `.html` file with a `<style>` tag. You c
 
 ## The Problem: Browser Defaults
 
+This is one of the first big “aha” moments in CSS.
+
+If something looks strange, it is not always because you wrote bad CSS. Sometimes it is because the browser already styled the element before you touched it.
+
 Here's something surprising: before you write a single line of CSS, your page already has styles. Every browser ships with a **default stylesheet** — a set of CSS rules built into the browser itself.
 
 These defaults exist so that raw HTML looks *somewhat* readable even without any CSS. For example, the browser's built-in rules make `<h1>` large and bold, `<a>` links blue and underlined, and `<ul>` lists indented with bullet points.
@@ -174,6 +189,8 @@ Open this in your browser. You'll see:
 - `<button>` looks like a native OS button
 
 These are all coming from the browser's built-in stylesheet — you wrote zero CSS. Now we'll replace all of that with our own baseline.
+
+In plain English: before your CSS starts, the browser already has opinions.
 
 ---
 

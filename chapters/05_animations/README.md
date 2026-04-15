@@ -2,9 +2,13 @@
 
 Animation can look mysterious at first, but most web animation is just a few CSS ideas repeated in different ways. In this chapter, you will build small animations from scratch so you can see the pieces clearly: transitions, keyframes, and transforms.
 
+A good beginner goal here is not “make the craziest animation possible.” It is “make motion feel intentional and understandable.”
+
 ---
 
 ## The Problem
+
+A beginner-friendly rule is: if CSS can describe the motion, prefer CSS first.
 
 A beginner might try to animate by changing styles with JavaScript over and over:
 
@@ -26,6 +30,8 @@ That works poorly. The code is noisy, the browser has less room to optimize, and
 ## Building It Step by Step
 
 ### v1 — CSS Transitions
+
+Transitions are the easiest place to start because they animate between two states you already understand, like normal and hover.
 
 Transitions animate a property from its current value to a new one when a state change occurs (hover, class addition, etc.):
 
@@ -127,6 +133,8 @@ Add delays, durations, and the full set:
 ## Walkthrough
 
 ### The Transform Coordinate System
+
+This section is often where beginners slow down. That is okay. The important first step is just learning that transforms move or reshape the element without changing the normal document flow the same way layout properties do.
 
 Transforms operate on the element's local coordinate system, centered at `transform-origin` (default: center center):
 

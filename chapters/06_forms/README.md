@@ -2,9 +2,13 @@
 
 Forms are where HTML becomes practical. Login forms, search boxes, contact forms, checkout pages, all of them depend on the same small set of elements. Beginners often style forms to look right without understanding what the browser already gives them for free. This chapter focuses on those built-in features first.
 
+The simplest beginner rule of forms is: use the right HTML first, then style it.
+
 If you use the right HTML elements, the browser already knows a lot: how labels connect to inputs, how keyboard focus should move, and how simple validation should work. Good form CSS starts by keeping that built-in behavior intact.
 
 ## The Problem
+
+A lot of form frustration comes from fighting the browser instead of using what the browser already knows about forms.
 
 A beginner often writes something like this:
 
@@ -29,6 +33,8 @@ The correct version uses one line of HTML the browser already understands:
 ```
 
 The `for`/`id` association activates click-to-focus, screen reader announcements, and the browser's label-to-input connection in the accessibility tree. `type="email"` activates email keyboard on mobile, format validation, and autofill. `required` activates the `:required` pseudo-class and native validation. No JavaScript, no framework.
+
+In plain English: correct HTML gives you a lot of useful behavior for free.
 
 ## Building It Step by Step
 
@@ -96,6 +102,8 @@ The foundation: correctly associated labels, properly typed inputs, and visible 
 The `:focus` ring uses `box-shadow` instead of `outline` for the same reason as buttons — the double-ring technique works on any background.
 
 ### v2: Validation States
+
+This is one of the places where CSS starts to feel very practical. The browser already knows whether the input is valid. CSS can react to that state visually.
 
 CSS has pseudo-classes for every state in the browser's form validation lifecycle.
 
