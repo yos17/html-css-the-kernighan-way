@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Own Grid System — Chapter 2</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   THE LIBRARY: miniGrid — 12-column responsive CSS Grid system
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+body { line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+/* Row — the 12-column grid */
+.row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+}
+
+/* Base: all col-* are full width on mobile */
+[class*="col-"] {
+  grid-column: span 12;
+  min-width: 0;  /* prevent overflow in grid items */
+}
+
+/* Column spans — no breakpoint (mobile-first default) */
+.col-1  { grid-column: span 1;  }
+.col-2  { grid-column: span 2;  }
+.col-3  { grid-column: span 3;  }
+.col-4  { grid-column: span 4;  }
+.col-5  { grid-column: span 5;  }
+.col-6  { grid-column: span 6;  }
+.col-7  { grid-column: span 7;  }
+.col-8  { grid-column: span 8;  }
+.col-9  { grid-column: span 9;  }
+.col-10 { grid-column: span 10; }
+.col-11 { grid-column: span 11; }
+.col-12 { grid-column: span 12; }
+
+/* Offset classes */
+.col-offset-1  { grid-column-start: 2;  }
+.col-offset-2  { grid-column-start: 3;  }
+.col-offset-3  { grid-column-start: 4;  }
+.col-offset-4  { grid-column-start: 5;  }
+.col-offset-6  { grid-column-start: 7;  }
+
+/* Tablet (md): ≥ 768px */
+@media (min-width: 768px) {
+  .col-md-1  { grid-column: span 1;  }
+  .col-md-2  { grid-column: span 2;  }
+  .col-md-3  { grid-column: span 3;  }
+  .col-md-4  { grid-column: span 4;  }
+  .col-md-5  { grid-column: span 5;  }
+  .col-md-6  { grid-column: span 6;  }
+  .col-md-7  { grid-column: span 7;  }
+  .col-md-8  { grid-column: span 8;  }
+  .col-md-9  { grid-column: span 9;  }
+  .col-md-10 { grid-column: span 10; }
+  .col-md-11 { grid-column: span 11; }
+  .col-md-12 { grid-column: span 12; }
+}
+
+/* Desktop (lg): ≥ 1024px */
+@media (min-width: 1024px) {
+  .col-lg-1  { grid-column: span 1;  }
+  .col-lg-2  { grid-column: span 2;  }
+  .col-lg-3  { grid-column: span 3;  }
+  .col-lg-4  { grid-column: span 4;  }
+  .col-lg-5  { grid-column: span 5;  }
+  .col-lg-6  { grid-column: span 6;  }
+  .col-lg-7  { grid-column: span 7;  }
+  .col-lg-8  { grid-column: span 8;  }
+  .col-lg-9  { grid-column: span 9;  }
+  .col-lg-10 { grid-column: span 10; }
+  .col-lg-11 { grid-column: span 11; }
+  .col-lg-12 { grid-column: span 12; }
+}
+
+/* Auto-fit card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DEMO STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --font-base:    system-ui, sans-serif;
+  --font-mono:    ui-monospace, monospace;
+  --color-text:   #1e293b;
+  --color-muted:  #64748b;
+  --color-bg:     #f8fafc;
+  --color-surface:#ffffff;
+  --color-border: #e2e8f0;
+  --color-accent: #4361ee;
+  --space:        1rem;
+  --radius:       0.5rem;
+}
+
+body { font-family: var(--font-base); background: var(--color-bg); color: var(--color-text); }
+h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.25rem; }
+h2 { font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem; }
+p  { font-size: 0.9rem; color: var(--color-muted); margin-bottom: 1rem; }
+.subtitle { color: var(--color-muted); margin-bottom: 2rem; }
+.page { padding: 2rem 0 4rem; }
+
+/* Grid demo cells */
+.cell {
+  background:    var(--color-accent);
+  color:         white;
+  padding:       0.75rem 0.5rem;
+  border-radius: var(--radius);
+  font-size:     0.75rem;
+  font-family:   var(--font-mono);
+  text-align:    center;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-soft {
+  background:    #eff6ff;
+  color:         var(--color-accent);
+  border:        1px solid #bfdbfe;
+  padding:       0.75rem 0.5rem;
+  border-radius: var(--radius);
+  font-size:     0.75rem;
+  font-family:   var(--font-mono);
+  text-align:    center;
+}
+
+.cell-gray {
+  background: var(--color-border);
+  color:      var(--color-muted);
+  padding:    0.75rem 0.5rem;
+  border-radius: var(--radius);
+  font-size:  0.75rem;
+  text-align: center;
+}
+
+/* Section wrapper */
+.section {
+  background:    var(--color-surface);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding:       1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Grid overlay toggle */
+.overlay-btn {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           0.4rem;
+  padding:       0.4rem 0.9rem;
+  background:    var(--color-accent);
+  color:         white;
+  border:        none;
+  border-radius: var(--radius);
+  cursor:        pointer;
+  font-size:     0.8rem;
+  font-weight:   500;
+  font-family:   var(--font-base);
+  transition:    background 0.15s;
+}
+.overlay-btn:hover { background: #3451d1; }
+
+/* Column overlay */
+.grid-overlay {
+  position:   fixed;
+  top:        0; left:  0;
+  width:      100%; height: 100%;
+  pointer-events: none;
+  z-index:    999;
+  display:    none;
+}
+.grid-overlay.active { display: block; }
+.grid-overlay-inner {
+  max-width:    1100px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  height:       100%;
+  display:      grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap:          1rem;
+}
+.grid-overlay-col {
+  background: rgba(99, 102, 241, 0.08);
+  border-inline: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* Breakpoint indicator */
+.bp-indicator {
+  position:   fixed;
+  bottom:     1rem;
+  right:      1rem;
+  padding:    0.4rem 0.75rem;
+  background: rgba(0,0,0,0.75);
+  color:      white;
+  border-radius: var(--radius);
+  font-size:  0.75rem;
+  font-family: var(--font-mono);
+  z-index:    1000;
+}
+
+code {
+  font-family: var(--font-mono);
+  background:  var(--color-bg);
+  border:      1px solid var(--color-border);
+  padding:     0.1em 0.3em;
+  border-radius: 3px;
+  font-size:   0.875em;
+}
+
+/* Holy grail demo */
+.holy-grail {
+  display:               grid;
+  grid-template-columns: 150px 1fr 120px;
+  grid-template-rows:    auto 1fr auto;
+  grid-template-areas:
+    "hdr  hdr  hdr "
+    "side main asid"
+    "ftr  ftr  ftr ";
+  gap:        0.5rem;
+  min-height: 180px;
+}
+.hg-header  { grid-area: hdr;  background:#4361ee;color:white;padding:0.5rem;border-radius:4px;text-align:center;font-size:0.8rem }
+.hg-sidebar { grid-area: side; background:#e0f2fe;padding:0.5rem;border-radius:4px;font-size:0.75rem }
+.hg-main    { grid-area: main; background:#f0fdf4;padding:0.5rem;border-radius:4px;font-size:0.8rem }
+.hg-aside   { grid-area: asid; background:#fef9c3;padding:0.5rem;border-radius:4px;font-size:0.75rem }
+.hg-footer  { grid-area: ftr;  background:#334155;color:white;padding:0.5rem;border-radius:4px;text-align:center;font-size:0.8rem }
+</style>
+</head>
+<body>
+
+<div class="grid-overlay" id="overlay">
+  <div class="grid-overlay-inner" id="overlay-inner"></div>
+</div>
+
+<div class="bp-indicator" id="bp">xs</div>
+
+<div class="container">
+<div class="page">
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem">
+    <div>
+      <h1>Build Your Own Grid System</h1>
+      <p class="subtitle" style="margin:0">Chapter 2 — CSS Grid, fr units, responsive columns</p>
+    </div>
+    <button class="overlay-btn" id="toggleOverlay">Show Grid Overlay</button>
+  </div>
+
+  <!-- ─── 12-COLUMN REFERENCE ─────────────────────────────────────── -->
+  <div class="section">
+    <h2>The 12-Column Grid</h2>
+    <p>12 divides evenly by 1, 2, 3, 4, 6, and 12 — every common layout is expressible. Resize the window to see columns stack.</p>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem" id="grid-demos"></div>
+  </div>
+
+  <!-- ─── RESPONSIVE ───────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Responsive Columns</h2>
+    <p>Same elements, different spans at each breakpoint. Resize the window.</p>
+
+    <div class="row" style="margin-bottom:0.75rem">
+      <div class="cell col-md-6 col-lg-4">col-md-6 col-lg-4<br><span style="opacity:0.75">mobile:full → tablet:½ → desktop:⅓</span></div>
+      <div class="cell col-md-6 col-lg-4">col-md-6 col-lg-4</div>
+      <div class="cell col-md-12 col-lg-4">col-md-12 col-lg-4<br><span style="opacity:0.75">mobile:full → tablet:full → desktop:⅓</span></div>
+    </div>
+
+    <div class="row">
+      <div class="cell col-md-8 col-lg-9">col-md-8 col-lg-9 (main content)</div>
+      <div class="cell col-md-4 col-lg-3">col-md-4 col-lg-3 (sidebar)</div>
+    </div>
+  </div>
+
+  <!-- ─── OFFSETS ──────────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Offsets</h2>
+    <p>Push a column right by N positions using <code>grid-column-start</code>.</p>
+
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
+      <div class="row"><div class="cell-soft col-6 col-offset-3">col-6 col-offset-3 (centered)</div></div>
+      <div class="row"><div class="cell-soft col-4 col-offset-4">col-4 col-offset-4</div></div>
+      <div class="row"><div class="cell-soft col-8 col-offset-2">col-8 col-offset-2</div></div>
+    </div>
+  </div>
+
+  <!-- ─── AUTO-FIT CARD GRID ──────────────────────────────────────── -->
+  <div class="section">
+    <h2>Auto-Fit Card Grid</h2>
+    <p><code>repeat(auto-fit, minmax(180px, 1fr))</code> — no media queries needed. Columns fill and collapse automatically.</p>
+
+    <div class="card-grid" id="card-grid"></div>
+  </div>
+
+  <!-- ─── NAMED AREAS ──────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Named Template Areas</h2>
+    <p>The "holy grail" layout — header, two sidebars, main content, footer — in 10 lines of CSS using <code>grid-template-areas</code>.</p>
+
+    <div class="holy-grail">
+      <div class="hg-header">header</div>
+      <div class="hg-sidebar">sidebar<br><small>grid-area: side</small></div>
+      <div class="hg-main">main content<br><small>grid-area: main</small></div>
+      <div class="hg-aside">aside<br><small>grid-area: asid</small></div>
+      <div class="hg-footer">footer</div>
+    </div>
+
+    <pre style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius);padding:1rem;margin-top:1rem;font-size:0.78rem;line-height:1.6;overflow-x:auto"><code style="background:none;border:none;padding:0;font-size:inherit">.holy-grail {
+  display: grid;
+  grid-template-columns: 150px 1fr 120px;
+  grid-template-areas:
+    "hdr  hdr  hdr "
+    "side main asid"
+    "ftr  ftr  ftr ";
+}</code></pre>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  GRID DEMO — render all column combinations
+// ═══════════════════════════════════════════════════════════════════════
+
+const layouts = [
+  { cols: [12],          label: 'col-12' },
+  { cols: [6, 6],        label: 'col-6 + col-6' },
+  { cols: [4, 4, 4],     label: 'col-4 × 3' },
+  { cols: [3, 3, 3, 3],  label: 'col-3 × 4' },
+  { cols: [8, 4],        label: 'col-8 + col-4' },
+  { cols: [9, 3],        label: 'col-9 + col-3' },
+  { cols: [2, 2, 2, 2, 2, 2], label: 'col-2 × 6' },
+];
+
+const container = document.getElementById('grid-demos');
+layouts.forEach(({ cols, label }) => {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<div style="font-size:0.75rem;color:var(--color-muted);font-family:var(--font-mono);margin-bottom:0.25rem">${label}</div>`;
+  const row = document.createElement('div');
+  row.className = 'row';
+  cols.forEach(n => {
+    const cell = document.createElement('div');
+    cell.className = `cell col-${n}`;
+    cell.textContent = `col-${n}`;
+    row.appendChild(cell);
+  });
+  wrapper.appendChild(row);
+  container.appendChild(wrapper);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CARD GRID
+// ═══════════════════════════════════════════════════════════════════════
+
+const cards = [
+  { title: 'Typography', desc: 'Font scales and vertical rhythm' },
+  { title: 'Color',      desc: 'Design tokens and themes' },
+  { title: 'Spacing',    desc: 'Consistent gaps and margins' },
+  { title: 'Animation',  desc: 'Transitions and keyframes' },
+  { title: 'Layout',     desc: 'Grid and flexbox patterns' },
+  { title: 'Forms',      desc: 'Inputs, labels, validation' },
+];
+
+const cardGrid = document.getElementById('card-grid');
+cards.forEach(({ title, desc }) => {
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:1rem';
+  div.innerHTML = `<div style="font-weight:600;color:var(--color-accent);margin-bottom:0.25rem">${title}</div>
+                   <div style="font-size:0.8rem;color:var(--color-muted)">${desc}</div>`;
+  cardGrid.appendChild(div);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GRID OVERLAY
+// ═══════════════════════════════════════════════════════════════════════
+
+const overlayInner = document.getElementById('overlay-inner');
+for (let i = 0; i < 12; i++) {
+  const col = document.createElement('div');
+  col.className = 'grid-overlay-col';
+  overlayInner.appendChild(col);
+}
+
+document.getElementById('toggleOverlay').addEventListener('click', function() {
+  const overlay = document.getElementById('overlay');
+  const active = overlay.classList.toggle('active');
+  this.textContent = active ? 'Hide Grid Overlay' : 'Show Grid Overlay';
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BREAKPOINT INDICATOR
+// ═══════════════════════════════════════════════════════════════════════
+
+function updateBP() {
+  const w = window.innerWidth;
+  const bp = document.getElementById('bp');
+  if      (w >= 1024) bp.textContent = `lg (${w}px)`;
+  else if (w >= 768)  bp.textContent = `md (${w}px)`;
+  else                bp.textContent = `sm (${w}px)`;
+}
+updateBP();
+window.addEventListener('resize', updateBP);
+</script>
+</body>
+</html>

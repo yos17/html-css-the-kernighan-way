@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Build Your Own CSS Reset — Chapter 1</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE LIBRARY: miniReset
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ─── Step 1: Box model ──────────────────────────────────────────────
+       The single most impactful rule. Makes width/height include
+       padding and border — predictable layout math.                       */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ─── Step 2: Root defaults ──────────────────────────────────────────
+       Prevent mobile browsers from boosting text size on orientation change.
+       Set a consistent tab-size for code blocks.                          */
+    :root {
+      -webkit-text-size-adjust: 100%;
+      tab-size: 4;
+    }
+
+    /* ─── Step 3: Body defaults ──────────────────────────────────────────
+       line-height: 1.5 — readable text without explicit CSS later.
+       min-height: 100vh — body always at least fills the viewport.        */
+    body {
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeSpeed;
+    }
+
+    /* ─── Step 4: Heading reset ──────────────────────────────────────────
+       Remove browser's bold/size defaults. Your type system sets these.   */
+    h1, h2, h3, h4, h5, h6 {
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
+    /* ─── Step 5: List reset ─────────────────────────────────────────────
+       Only remove bullets from lists that are explicitly navigational
+       (role="list"). Document lists keep their bullets.                   */
+    ul[role="list"],
+    ol[role="list"] {
+      list-style: none;
+    }
+
+    /* ─── Step 6: Media reset ────────────────────────────────────────────
+       display: block removes the mysterious inline baseline gap.
+       max-width: 100% prevents images from overflowing containers.        */
+    img, picture, video, canvas, svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    /* ─── Step 7: Form element font reset ───────────────────────────────
+       Browsers set form elements to the OS system font, overriding
+       the inherited body font. This restores inheritance.                 */
+    input, button, textarea, select {
+      font: inherit;
+    }
+
+    /* ─── Step 8: Text overflow ──────────────────────────────────────────
+       Prevent long unbreakable words from causing horizontal overflow.    */
+    p, h1, h2, h3, h4, h5, h6 {
+      overflow-wrap: break-word;
+    }
+
+    /* ─── Step 9: Stacking context ───────────────────────────────────────
+       Create a new stacking context for common JS framework root elements.
+       Prevents z-index leakage between the app and document.              */
+    #root, #__next {
+      isolation: isolate;
+    }
+
+    /* ─── Step 10: Focus visible ─────────────────────────────────────────
+       Keep focus ring for keyboard users; remove for mouse/touch.         */
+    :focus:not(:focus-visible) { outline: none; }
+    :focus-visible {
+      outline: 2px solid #005fcc;
+      outline-offset: 2px;
+    }
+
+    /* ─── Step 11: Reduced motion ────────────────────────────────────────
+       Disable all motion for users who request it.                        */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE APPLICATION — demo UI
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0d0d1a;
+      color: #c8c8d8;
+      padding: 24px;
+    }
+
+    h1 { color: #a8d8ea; font-size: 1.3em; margin-bottom: 4px; font-weight: 700; }
+    .subtitle { color: #555; font-size: 0.85em; margin-bottom: 28px; }
+
+    .controls {
+      display: flex; gap: 10px; margin-bottom: 20px;
+      flex-wrap: wrap; align-items: center;
+    }
+
+    button.primary {
+      background: #0f3460; color: #a8d8ea;
+      border: 1px solid #a8d8ea;
+      padding: 7px 14px; border-radius: 4px;
+      cursor: pointer; font-family: 'Courier New', monospace;
+      font-size: 0.88em; transition: background 0.15s;
+    }
+    button.primary:hover { background: #1a5276; }
+    button.secondary {
+      background: #1a1a2e; color: #888;
+      border: 1px solid #333;
+      padding: 7px 14px; border-radius: 4px;
+      cursor: pointer; font-family: 'Courier New', monospace;
+      font-size: 0.88em; transition: background 0.15s;
+    }
+    button.secondary:hover { background: #222244; }
+    button.active { background: #1a3a2e; color: #7ec87e; border-color: #7ec87e; }
+
+    .categories {
+      display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .cat-btn {
+      padding: 4px 12px; font-size: 0.78em; border-radius: 12px;
+      border: 1px solid #333; background: transparent; color: #666;
+      cursor: pointer; font-family: 'Courier New', monospace;
+      transition: all 0.15s;
+    }
+    .cat-btn.active { border-color: #a8d8ea; color: #a8d8ea; }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 600px) { .demo-grid { grid-template-columns: 1fr; } }
+
+    .demo-pane {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .demo-pane-header {
+      background: #0f0f20;
+      padding: 6px 12px;
+      font-size: 0.75em;
+      color: #555;
+      border-bottom: 1px solid #1a1a30;
+      display: flex; justify-content: space-between;
+    }
+    .demo-pane-label { color: #a8d8ea; }
+    .demo-content {
+      padding: 16px;
+    }
+
+    /* Styles for the "before" (browser default) iframe simulation */
+    .before-content {
+      font-family: Times New Roman, serif;
+    }
+    .before-content h2 {
+      font-size: 1.5em !important;
+      font-weight: bold !important;
+      margin-block: 0.83em !important;
+    }
+    .before-content ul {
+      padding-left: 40px !important;
+      list-style: disc !important;
+      margin-block: 1em !important;
+    }
+    .before-content button {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+      appearance: auto !important;
+      -webkit-appearance: button !important;
+      padding: 1px 7px !important;
+    }
+    .before-content p {
+      margin-block: 1em !important;
+    }
+
+    .rule-list {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #111128;
+      font-size: 0.82em;
+      transition: background 0.1s;
+    }
+    .rule-item:hover { background: #0f0f20; }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-item.hidden { display: none; }
+    .rule-selector {
+      color: #a8d8ea;
+      min-width: 220px;
+      flex-shrink: 0;
+      font-family: 'Courier New', monospace;
+    }
+    .rule-property {
+      color: #7ec87e;
+      flex: 1;
+      font-family: 'Courier New', monospace;
+    }
+    .rule-why {
+      color: #555;
+      font-size: 0.9em;
+      flex: 2;
+    }
+    .rule-category {
+      color: #e3c87e;
+      font-size: 0.75em;
+      padding: 2px 6px;
+      border: 1px solid #554420;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .stats {
+      margin-top: 12px;
+      font-size: 0.78em;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Build Your Own CSS Reset</h1>
+  <p class="subtitle">Chapter 1 — cascade, specificity, the box model, and why browsers lie to you</p>
+
+  <div class="controls">
+    <button class="primary" onclick="toggleReset()">Toggle Reset</button>
+    <button class="secondary" onclick="loadSamples()">Load All Rules</button>
+  </div>
+
+  <div class="categories" id="catBar">
+    <button class="cat-btn active" onclick="filterCat('all')">ALL</button>
+    <button class="cat-btn" onclick="filterCat('box-model')">Box Model</button>
+    <button class="cat-btn" onclick="filterCat('typography')">Typography</button>
+    <button class="cat-btn" onclick="filterCat('media')">Media</button>
+    <button class="cat-btn" onclick="filterCat('forms')">Forms</button>
+    <button class="cat-btn" onclick="filterCat('accessibility')">Accessibility</button>
+  </div>
+
+  <div class="demo-grid">
+    <div class="demo-pane">
+      <div class="demo-pane-header">
+        <span class="demo-pane-label">Without reset</span>
+        <span>browser defaults</span>
+      </div>
+      <div class="demo-content before-content" id="beforePane">
+        <h2>Heading (h2)</h2>
+        <p>A paragraph of text. Margin above and below.</p>
+        <ul>
+          <li>List item with default 40px left padding</li>
+          <li>And bullets that pad inward</li>
+        </ul>
+        <button>OS Native Button</button>
+        <p>Width calculation: <span id="boxBefore" style="display:inline-block;width:200px;padding:20px;border:5px solid #888;background:#222">200px</span></p>
+      </div>
+    </div>
+    <div class="demo-pane">
+      <div class="demo-pane-header">
+        <span class="demo-pane-label">With reset</span>
+        <span>our baseline</span>
+      </div>
+      <div class="demo-content" id="afterPane">
+        <h2 style="font-size:1.3em;font-weight:700;margin-bottom:6px">Heading (h2)</h2>
+        <p style="margin-bottom:8px">A paragraph of text. No margin by default.</p>
+        <ul role="list" style="list-style:none;padding:0;margin-bottom:8px">
+          <li>List item with no indent</li>
+          <li>Bullets are opt-in, not default</li>
+        </ul>
+        <button style="font:inherit;cursor:pointer;background:transparent;border:1px solid #555;padding:4px 10px;color:#c8c8d8">Styled Button</button>
+        <p style="margin-top:10px">Width calculation: <span id="boxAfter" style="display:inline-block;width:200px;padding:20px;border:5px solid #7ec87e;background:#0d2a0d">200px</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-list" id="ruleList">
+    <!-- rules rendered by JS -->
+  </div>
+  <div class="stats" id="stats"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  THE DATA: every rule in the reset with its category and rationale
+// ═══════════════════════════════════════════════════════════════════════
+
+const RULES = [
+  {
+    selector: '*, *::before, *::after',
+    property: 'box-sizing: border-box',
+    why: 'Width/height includes padding + border. Predictable layout math.',
+    category: 'box-model'
+  },
+  {
+    selector: '*, *::before, *::after',
+    property: 'margin: 0; padding: 0',
+    why: 'Browser default margins are inconsistent. Components set their own spacing.',
+    category: 'box-model'
+  },
+  {
+    selector: ':root',
+    property: '-webkit-text-size-adjust: 100%',
+    why: 'Prevents mobile browsers from boosting font size on orientation change.',
+    category: 'typography'
+  },
+  {
+    selector: ':root',
+    property: 'tab-size: 4',
+    why: 'Consistent tab width in <pre> and <code> blocks across browsers.',
+    category: 'typography'
+  },
+  {
+    selector: 'body',
+    property: 'min-height: 100vh',
+    why: 'Body at least fills the viewport — no short pages.',
+    category: 'box-model'
+  },
+  {
+    selector: 'body',
+    property: 'line-height: 1.5',
+    why: 'Readable default line height. Override per-component as needed.',
+    category: 'typography'
+  },
+  {
+    selector: 'body',
+    property: '-webkit-font-smoothing: antialiased',
+    why: 'Sharper text rendering on macOS/iOS high-DPI screens.',
+    category: 'typography'
+  },
+  {
+    selector: 'h1, h2, h3, h4, h5, h6',
+    property: 'font-size: inherit; font-weight: inherit',
+    why: 'Removes browser bold/size defaults. Your type scale sets these deliberately.',
+    category: 'typography'
+  },
+  {
+    selector: 'ul[role="list"], ol[role="list"]',
+    property: 'list-style: none',
+    why: 'Only removes bullets from navigational lists. Document lists keep theirs.',
+    category: 'accessibility'
+  },
+  {
+    selector: 'img, picture, video, canvas, svg',
+    property: 'display: block',
+    why: 'Removes mysterious baseline gap below inline images.',
+    category: 'media'
+  },
+  {
+    selector: 'img, picture, video, canvas, svg',
+    property: 'max-width: 100%',
+    why: 'Images never overflow their container.',
+    category: 'media'
+  },
+  {
+    selector: 'input, button, textarea, select',
+    property: 'font: inherit',
+    why: 'Browsers override font inheritance for form elements. This restores it.',
+    category: 'forms'
+  },
+  {
+    selector: 'p, h1, h2, h3, h4, h5, h6',
+    property: 'overflow-wrap: break-word',
+    why: 'Long words won\'t cause horizontal overflow.',
+    category: 'typography'
+  },
+  {
+    selector: ':focus:not(:focus-visible)',
+    property: 'outline: none',
+    why: 'Hides focus ring for mouse clicks. Keyboard users still see it.',
+    category: 'accessibility'
+  },
+  {
+    selector: ':focus-visible',
+    property: 'outline: 2px solid #005fcc; outline-offset: 2px',
+    why: 'Clear focus ring for keyboard navigation. Never remove focus styles.',
+    category: 'accessibility'
+  },
+  {
+    selector: '@media (prefers-reduced-motion: reduce) *',
+    property: 'animation-duration: 0.01ms; transition-duration: 0.01ms',
+    why: 'Disables all motion for users with vestibular disorders.',
+    category: 'accessibility'
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  THE APPLICATION
+// ═══════════════════════════════════════════════════════════════════════
+
+let currentCategory = 'all';
+let resetEnabled = true;
+
+function renderRules() {
+  const list = document.getElementById('ruleList');
+  list.innerHTML = '';
+
+  const filtered = currentCategory === 'all'
+    ? RULES
+    : RULES.filter(r => r.category === currentCategory);
+
+  filtered.forEach(rule => {
+    const div = document.createElement('div');
+    div.className = 'rule-item';
+    div.innerHTML = `
+      <span class="rule-selector">${escHtml(rule.selector)}</span>
+      <span class="rule-property">${escHtml(rule.property)}</span>
+      <span class="rule-why">${escHtml(rule.why)}</span>
+      <span class="rule-category">${rule.category}</span>
+    `;
+    list.appendChild(div);
+  });
+
+  updateStats(filtered.length);
+}
+
+function filterCat(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  const btn = [...document.querySelectorAll('.cat-btn')]
+    .find(b => b.textContent.toLowerCase().replace(/\s/g, '-') === cat ||
+                (cat === 'all' && b.textContent === 'ALL'));
+  if (btn) btn.classList.add('active');
+  renderRules();
+}
+
+function loadSamples() {
+  filterCat('all');
+}
+
+function toggleReset() {
+  resetEnabled = !resetEnabled;
+  const btn = document.querySelector('button.primary');
+
+  if (resetEnabled) {
+    btn.textContent = 'Toggle Reset';
+    btn.classList.remove('active');
+    document.getElementById('beforePane').classList.add('before-content');
+    document.getElementById('boxBefore').textContent = '200px';
+    document.getElementById('boxAfter').textContent = '200px';
+  } else {
+    btn.textContent = 'Reset OFF ✓';
+    btn.classList.add('active');
+    document.getElementById('beforePane').classList.remove('before-content');
+    document.getElementById('boxBefore').textContent = '200px';
+    document.getElementById('boxAfter').textContent = '200px';
+  }
+}
+
+function updateStats(count) {
+  document.getElementById('stats').textContent =
+    `Showing ${count} of ${RULES.length} reset rules`;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Measure actual rendered widths for the box model demo
+function measureBoxes() {
+  const before = document.getElementById('boxBefore');
+  const after  = document.getElementById('boxAfter');
+  const bw = before.getBoundingClientRect().width;
+  const aw = after.getBoundingClientRect().width;
+  before.textContent = `${Math.round(bw)}px rendered`;
+  after.textContent  = `${Math.round(aw)}px rendered`;
+}
+
+renderRules();
+measureBoxes();
+</script>
+</body>
+</html>

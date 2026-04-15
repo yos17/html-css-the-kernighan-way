@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5 — Grid System Playground</title>
+<style>
+  /* ─── Base ───────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0d1a;
+    --bg2:       #111122;
+    --bg3:       #1a1a2e;
+    --bg4:       #16213e;
+    --text:      #c8c8d8;
+    --text-dim:  #7878a0;
+    --accent:    #a8d8ea;
+    --accent2:   #e8a0d8;
+    --accent3:   #a8eac8;
+    --accent4:   #ead8a8;
+    --border:    #2a2a40;
+    --radius:    6px;
+    --mono:      'Courier New', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── Layout ─────────────────────────────────────────────── */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    margin-bottom: 2.5rem;
+    font-size: 0.875rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  h3 {
+    font-size: 0.875rem;
+    color: var(--accent2);
+    margin-bottom: 0.75rem;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  /* ─── Controls ───────────────────────────────────────────── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+
+  .btn {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.85rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+
+  label {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  input[type="range"] {
+    accent-color: var(--accent);
+    width: 120px;
+  }
+
+  select {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    border-radius: var(--radius);
+  }
+
+  .control-val {
+    color: var(--accent);
+    font-size: 0.8rem;
+    min-width: 2rem;
+  }
+
+  /* ─── Demo containers ────────────────────────────────────── */
+  .demo-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    min-height: 80px;
+    position: relative;
+  }
+
+  .demo-box.show-lines {
+    background-image:
+      repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent calc(100% / var(--cols, 12)));
+  }
+
+  /* ─── Grid cells ─────────────────────────────────────────── */
+  .cell {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    transition: background 0.2s;
+    text-align: center;
+  }
+
+  .cell:hover { background: var(--bg4); color: var(--text); }
+
+  .cell--accent  { background: rgba(168,216,234,0.12); border-color: var(--accent);  color: var(--accent);  }
+  .cell--accent2 { background: rgba(232,160,216,0.12); border-color: var(--accent2); color: var(--accent2); }
+  .cell--accent3 { background: rgba(168,234,200,0.12); border-color: var(--accent3); color: var(--accent3); }
+  .cell--accent4 { background: rgba(234,216,168,0.12); border-color: var(--accent4); color: var(--accent4); }
+  .cell--tall { min-height: 100px; }
+  .cell--short { min-height: 32px; }
+
+  /* ─── 12-Column Grid ─────────────────────────────────────── */
+  #col-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 12), 1fr);
+    gap: var(--gap, 8px);
+  }
+
+  /* ─── Named Areas Layout ─────────────────────────────────── */
+  #named-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    grid-template-rows: 50px 1fr 40px;
+    grid-template-areas:
+      "header  header"
+      "sidebar content"
+      "footer  footer";
+    gap: 6px;
+    height: 300px;
+  }
+
+  .area-header  { grid-area: header;  }
+  .area-sidebar { grid-area: sidebar; }
+  .area-content { grid-area: content; }
+  .area-footer  { grid-area: footer;  }
+
+  .area-cell {
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+
+  /* ─── Auto-fill vs Auto-fit ──────────────────────────────── */
+  .fill-grid, .fit-grid {
+    display: grid;
+    gap: 8px;
+    min-height: 60px;
+  }
+
+  #fill-grid { grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 100px), 1fr)); }
+  #fit-grid  { grid-template-columns: repeat(auto-fit,  minmax(var(--card-min, 100px), 1fr)); }
+
+  /* ─── Dense Grid ─────────────────────────────────────────── */
+  #dense-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-auto-rows: 60px;
+    gap: 6px;
+    grid-auto-flow: dense;
+  }
+
+  #dense-grid .cell { min-height: unset; height: 100%; }
+  #dense-grid .span2col { grid-column: span 2; }
+  #dense-grid .span2row { grid-row: span 2; }
+  #dense-grid .span2x2  { grid-column: span 2; grid-row: span 2; }
+
+  /* ─── fr explainer ───────────────────────────────────────── */
+  .fr-demo {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 0.75rem;
+  }
+
+  .fr-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+  }
+
+  /* ─── Code block ─────────────────────────────────────────── */
+  pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: #a8c8ff;
+    margin-top: 0.75rem;
+  }
+
+  .kw  { color: #a8d8ea; }
+  .prop{ color: #e8a0d8; }
+  .val { color: #a8eac8; }
+  .cmt { color: #555577; }
+
+  /* ─── Info chips ─────────────────────────────────────────── */
+  .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .chip {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .chip span { color: var(--accent); }
+
+  /* ─── Grid line overlay ──────────────────────────────────── */
+  .grid-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* ─── Two-panel comparison ───────────────────────────────── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .compare-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .compare-label span { color: var(--accent); }
+
+  /* ─── Tabs ───────────────────────────────────────────────── */
+  .tabs { display: flex; gap: 0; margin-bottom: 0; }
+
+  .tab-btn {
+    background: var(--bg3);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 0.4rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-right: -1px;
+  }
+
+  .tab-btn:first-child { border-radius: var(--radius) 0 0 0; }
+  .tab-btn:last-child  { border-radius: 0 var(--radius) 0 0; }
+  .tab-btn.active { background: var(--bg2); color: var(--accent); border-color: var(--border); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .tab-body {
+    border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    padding: 1rem;
+    background: var(--bg2);
+  }
+
+  /* ─── Chapter header ─────────────────────────────────────── */
+  .chapter-tag {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2.5rem 0;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="chapter-tag">HTML &amp; CSS: The Kernighan Way</div>
+  <h1>Chapter 5 — Grid System</h1>
+  <p class="subtitle">Interactive playground for CSS Grid concepts: 12-column layout, named areas, auto-fill vs auto-fit, and more.</p>
+
+  <!-- ─── Section 1: 12-Column Grid ──────────────────────── -->
+  <div class="section">
+    <h2>1. The 12-Column Grid</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Adjust the number of columns and gap. Click cells to toggle spanning.
+    </p>
+
+    <div class="controls">
+      <label>Columns:</label>
+      <input type="range" id="colsRange" min="1" max="12" value="12">
+      <span class="control-val" id="colsVal">12</span>
+
+      <label>Gap:</label>
+      <input type="range" id="gapRange" min="0" max="32" value="8">
+      <span class="control-val" id="gapVal">8px</span>
+
+      <button class="btn" id="toggleLines">Show Grid Lines</button>
+      <button class="btn" id="shuffleBtn">Shuffle Spans</button>
+    </div>
+
+    <div class="demo-box" id="colDemoBox">
+      <div id="col-grid"></div>
+    </div>
+
+    <div class="info-row" id="gridInfo"></div>
+
+    <pre><span class="prop">.grid</span> {
+  <span class="kw">display</span>: <span class="val">grid</span>;
+  <span class="kw">grid-template-columns</span>: <span class="val">repeat(<span id="codeColsVal">12</span>, 1fr)</span>;
+  <span class="kw">gap</span>: <span class="val"><span id="codeGapVal">8</span>px</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── Section 2: Named Template Areas ─────────────────── -->
+  <div class="section">
+    <h2>2. Named Template Areas</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      The page layout below uses <code style="color:var(--accent)">grid-template-areas</code>. Toggle mobile mode to see the responsive rearrangement.
+    </p>
+
+    <div class="controls">
+      <button class="btn" id="mobileToggle">Toggle Mobile Layout</button>
+      <button class="btn" id="sidebarToggle">Toggle Sidebar Side</button>
+    </div>
+
+    <div class="demo-box">
+      <div id="named-grid">
+        <div class="area-cell area-header  cell--accent"  style="background:rgba(168,216,234,0.15)">HEADER</div>
+        <div class="area-cell area-sidebar cell--accent2" style="background:rgba(232,160,216,0.15)">SIDEBAR</div>
+        <div class="area-cell area-content cell--accent3" style="background:rgba(168,234,200,0.15)">CONTENT</div>
+        <div class="area-cell area-footer  cell--accent4" style="background:rgba(234,216,168,0.15)">FOOTER</div>
+      </div>
+    </div>
+
+    <pre id="namedCode"><span class="prop">.page-layout</span> {
+  <span class="kw">display</span>: <span class="val">grid</span>;
+  <span class="kw">grid-template-columns</span>: <span class="val">200px 1fr</span>;
+  <span class="kw">grid-template-rows</span>: <span class="val">50px 1fr 40px</span>;
+  <span class="kw">grid-template-areas</span>:
+    <span class="val">"header  header"</span>
+    <span class="val">"sidebar content"</span>
+    <span class="val">"footer  footer"</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── Section 3: auto-fill vs auto-fit ─────────────────── -->
+  <div class="section">
+    <h2>3. auto-fill vs. auto-fit</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      The key difference shows when there are fewer items than columns. Resize to see it.
+    </p>
+
+    <div class="controls">
+      <label>Min card size:</label>
+      <input type="range" id="cardMinRange" min="60" max="250" value="100">
+      <span class="control-val" id="cardMinVal">100px</span>
+
+      <label>Item count:</label>
+      <input type="range" id="itemCountRange" min="1" max="8" value="3">
+      <span class="control-val" id="itemCountVal">3</span>
+    </div>
+
+    <div class="compare">
+      <div>
+        <div class="compare-label"><span>auto-fill</span> — empty tracks remain</div>
+        <div class="demo-box">
+          <div id="fill-grid"></div>
+        </div>
+      </div>
+      <div>
+        <div class="compare-label"><span>auto-fit</span> — empty tracks collapse</div>
+        <div class="demo-box">
+          <div id="fit-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <pre><span class="cmt">/* auto-fill — items stay at min size, empties remain */</span>
+<span class="prop">.grid</span> { <span class="kw">grid-template-columns</span>: <span class="val">repeat(auto-fill, minmax(<span id="codeFillMin">100px</span>, 1fr))</span>; }
+
+<span class="cmt">/* auto-fit — items expand to fill, empties collapse */</span>
+<span class="prop">.grid</span> { <span class="kw">grid-template-columns</span>: <span class="val">repeat(auto-fit, minmax(<span id="codeFitMin">100px</span>, 1fr))</span>; }</pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── Section 4: Dense Auto-Placement ─────────────────── -->
+  <div class="section">
+    <h2>4. Dense Auto-Placement</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      <code style="color:var(--accent)">grid-auto-flow: dense</code> fills gaps left by spanning items. Toggle it to see the difference.
+    </p>
+
+    <div class="controls">
+      <button class="btn active" id="denseToggle">Dense: ON</button>
+      <button class="btn" id="reshuffleBtn">Reshuffle</button>
+    </div>
+
+    <div class="demo-box">
+      <div id="dense-grid"></div>
+    </div>
+
+    <pre id="denseCode"><span class="prop">.grid</span> {
+  <span class="kw">grid-auto-flow</span>: <span class="val">dense</span>; <span class="cmt">/* fill gaps with later items */</span>
+  <span class="kw">grid-auto-rows</span>: <span class="val">60px</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── Section 5: fr unit explainer ─────────────────────── -->
+  <div class="section">
+    <h2>5. The fr Unit — Fractional Space</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Choose a column definition to see how <code style="color:var(--accent)">fr</code> distributes available space.
+    </p>
+
+    <div class="controls">
+      <select id="frSelect">
+        <option value="1fr 1fr 1fr">1fr 1fr 1fr — equal thirds</option>
+        <option value="1fr 2fr 1fr">1fr 2fr 1fr — middle is double</option>
+        <option value="200px 1fr">200px 1fr — fixed + flexible</option>
+        <option value="200px 1fr 2fr">200px 1fr 2fr — fixed + two flexibles</option>
+        <option value="1fr 1fr minmax(0, 2fr)">1fr 1fr minmax(0, 2fr)</option>
+        <option value="repeat(4, 1fr)">repeat(4, 1fr) — four equal</option>
+      </select>
+    </div>
+
+    <div class="demo-box">
+      <div id="fr-demo" style="display:grid;gap:6px;"></div>
+    </div>
+
+    <div id="fr-info" class="info-row"></div>
+
+    <pre><span class="prop">.grid</span> {
+  <span class="kw">grid-template-columns</span>: <span class="val" id="frCodeVal">1fr 1fr 1fr</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── Section 6: Explicit vs Implicit ──────────────────── -->
+  <div class="section">
+    <h2>6. Explicit vs. Implicit Grid</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Items beyond the explicit row count fall into the implicit grid. Adjust <code style="color:var(--accent)">grid-auto-rows</code> to control them.
+    </p>
+
+    <div class="controls">
+      <label>Explicit rows:</label>
+      <input type="range" id="explicitRows" min="1" max="3" value="1">
+      <span class="control-val" id="explicitRowsVal">1</span>
+
+      <label>Total items:</label>
+      <input type="range" id="totalItems" min="3" max="12" value="7">
+      <span class="control-val" id="totalItemsVal">7</span>
+
+      <label>Auto row height:</label>
+      <input type="range" id="autoRowHeight" min="40" max="120" value="60">
+      <span class="control-val" id="autoRowHeightVal">60px</span>
+    </div>
+
+    <div class="demo-box">
+      <div id="explicit-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+    </div>
+
+    <div id="implicit-info" class="info-row"></div>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+// ─── Utilities ──────────────────────────────────────────────
+function el(id) { return document.getElementById(id); }
+function make(tag, attrs = {}, text = '') {
+  const e = document.createElement(tag);
+  Object.assign(e, attrs);
+  if (text) e.textContent = text;
+  return e;
+}
+function chip(label, value) {
+  const c = document.createElement('div');
+  c.className = 'chip';
+  c.innerHTML = `${label}: <span>${value}</span>`;
+  return c;
+}
+
+// ─── Section 1: 12-Column Grid ──────────────────────────────
+let cols = 12, gap = 8, showLines = false;
+const spans = [1,1,1,2,1,3,1,1,2,1,4,1,2,1];
+
+function renderColGrid() {
+  const grid = el('col-grid');
+  const box  = el('colDemoBox');
+  grid.style.setProperty('--cols', cols);
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gap = `${gap}px`;
+  box.style.setProperty('--cols', cols);
+  el('codeColsVal').textContent = cols;
+  el('codeGapVal').textContent  = gap;
+  el('colsVal').textContent = cols;
+  el('gapVal').textContent  = gap + 'px';
+
+  if (showLines) {
+    grid.style.backgroundImage = `repeating-linear-gradient(to right, #2a2a4088 0, #2a2a4088 1px, transparent 1px, transparent calc(100% / ${cols}))`;
+  } else {
+    grid.style.backgroundImage = 'none';
+  }
+
+  grid.innerHTML = '';
+  const colors = ['--accent','--accent2','--accent3','--accent4'];
+  let col = 0;
+  for (let i = 0; i < 18; i++) {
+    const span = Math.min(spans[i % spans.length], cols);
+    col += span;
+    if (col > cols && i > 0) break;
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.gridColumn = `span ${span}`;
+    cell.style.borderColor = `var(${colors[i % colors.length]})`;
+    cell.style.color = `var(${colors[i % colors.length]})`;
+    cell.style.background = `color-mix(in srgb, var(${colors[i % colors.length]}) 10%, var(--bg3))`;
+    cell.textContent = span > 1 ? `span ${span}` : '·';
+    cell.title = `grid-column: span ${span}`;
+    grid.appendChild(cell);
+    if (col >= cols) break;
+  }
+
+  const info = el('gridInfo');
+  info.innerHTML = '';
+  info.appendChild(chip('columns', cols));
+  info.appendChild(chip('gap', gap + 'px'));
+  info.appendChild(chip('track width', `calc((100% - ${(cols-1)*gap}px) / ${cols})`));
+}
+
+el('colsRange').addEventListener('input', e => { cols = +e.target.value; renderColGrid(); });
+el('gapRange').addEventListener('input',  e => { gap  = +e.target.value; renderColGrid(); });
+
+el('toggleLines').addEventListener('click', () => {
+  showLines = !showLines;
+  el('toggleLines').classList.toggle('active', showLines);
+  el('toggleLines').textContent = showLines ? 'Hide Grid Lines' : 'Show Grid Lines';
+  renderColGrid();
+});
+
+el('shuffleBtn').addEventListener('click', () => {
+  for (let i = spans.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [spans[i], spans[j]] = [spans[j], spans[i]];
+  }
+  renderColGrid();
+});
+
+renderColGrid();
+
+// ─── Section 2: Named Template Areas ────────────────────────
+let isMobile = false, sidebarRight = false;
+
+function updateNamedGrid() {
+  const grid = el('named-grid');
+  const code = el('namedCode');
+
+  if (isMobile) {
+    grid.style.gridTemplateColumns = '1fr';
+    grid.style.gridTemplateRows = 'auto auto auto auto';
+    grid.style.gridTemplateAreas = `"header" "content" "sidebar" "footer"`;
+    code.innerHTML = `<span class="prop">.page-layout</span> {
+  <span class="kw">grid-template-columns</span>: <span class="val">1fr</span>;
+  <span class="kw">grid-template-areas</span>:
+    <span class="val">"header"</span>
+    <span class="val">"content"</span>
+    <span class="val">"sidebar"</span>
+    <span class="val">"footer"</span>;
+}`;
+  } else if (sidebarRight) {
+    grid.style.gridTemplateColumns = '1fr 200px';
+    grid.style.gridTemplateRows = '50px 1fr 40px';
+    grid.style.gridTemplateAreas = `"header header" "content sidebar" "footer footer"`;
+    code.innerHTML = `<span class="prop">.page-layout</span> {
+  <span class="kw">grid-template-columns</span>: <span class="val">1fr 200px</span>;
+  <span class="kw">grid-template-areas</span>:
+    <span class="val">"header  header"</span>
+    <span class="val">"content sidebar"</span>
+    <span class="val">"footer  footer"</span>;
+}`;
+  } else {
+    grid.style.gridTemplateColumns = '200px 1fr';
+    grid.style.gridTemplateRows = '50px 1fr 40px';
+    grid.style.gridTemplateAreas = `"header header" "sidebar content" "footer footer"`;
+    code.innerHTML = `<span class="prop">.page-layout</span> {
+  <span class="kw">grid-template-columns</span>: <span class="val">200px 1fr</span>;
+  <span class="kw">grid-template-areas</span>:
+    <span class="val">"header  header"</span>
+    <span class="val">"sidebar content"</span>
+    <span class="val">"footer  footer"</span>;
+}`;
+  }
+}
+
+el('mobileToggle').addEventListener('click', () => {
+  isMobile = !isMobile;
+  el('mobileToggle').classList.toggle('active', isMobile);
+  el('mobileToggle').textContent = isMobile ? 'Mobile Layout (ON)' : 'Toggle Mobile Layout';
+  updateNamedGrid();
+});
+
+el('sidebarToggle').addEventListener('click', () => {
+  if (isMobile) return;
+  sidebarRight = !sidebarRight;
+  el('sidebarToggle').classList.toggle('active', sidebarRight);
+  updateNamedGrid();
+});
+
+// ─── Section 3: auto-fill vs auto-fit ───────────────────────
+function renderFillFit() {
+  const minPx = el('cardMinRange').value;
+  const count = el('itemCountRange').value;
+  el('cardMinVal').textContent  = minPx + 'px';
+  el('itemCountVal').textContent = count;
+  el('codeFillMin').textContent = minPx + 'px';
+  el('codeFitMin').textContent  = minPx + 'px';
+
+  el('fill-grid').style.gridTemplateColumns = `repeat(auto-fill, minmax(${minPx}px, 1fr))`;
+  el('fit-grid').style.gridTemplateColumns  = `repeat(auto-fit,  minmax(${minPx}px, 1fr))`;
+
+  el('fill-grid').style.setProperty('--card-min', minPx + 'px');
+  el('fit-grid').style.setProperty('--card-min', minPx + 'px');
+
+  [el('fill-grid'), el('fit-grid')].forEach(grid => {
+    grid.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const c = document.createElement('div');
+      c.className = 'cell';
+      c.textContent = i + 1;
+      grid.appendChild(c);
+    }
+  });
+}
+
+el('cardMinRange').addEventListener('input',  renderFillFit);
+el('itemCountRange').addEventListener('input', renderFillFit);
+renderFillFit();
+
+// ─── Section 4: Dense Auto-Placement ────────────────────────
+let denseOn = true;
+
+function renderDenseGrid(randomize = false) {
+  const grid = el('dense-grid');
+  if (randomize || grid.children.length === 0) {
+    const items = [
+      { span: '2col', label: 'span 2 col' },
+      { span: 'normal', label: '1×1' },
+      { span: 'normal', label: '1×1' },
+      { span: '2row', label: 'span 2 row' },
+      { span: 'normal', label: '1×1' },
+      { span: '2x2', label: '2×2' },
+      { span: 'normal', label: '1×1' },
+      { span: 'normal', label: '1×1' },
+      { span: '2col', label: 'span 2 col' },
+      { span: 'normal', label: '1×1' },
+      { span: 'normal', label: '1×1' },
+    ];
+    // shuffle
+    for (let i = items.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    const colors = ['--accent','--accent2','--accent3','--accent4'];
+    grid.innerHTML = '';
+    items.forEach((item, i) => {
+      const c = document.createElement('div');
+      c.className = 'cell';
+      if (item.span === '2col') c.classList.add('span2col');
+      if (item.span === '2row') c.classList.add('span2row');
+      if (item.span === '2x2')  c.classList.add('span2x2');
+      c.style.borderColor = `var(${colors[i % colors.length]})`;
+      c.style.color = `var(${colors[i % colors.length]})`;
+      c.style.background = `color-mix(in srgb, var(${colors[i % colors.length]}) 12%, var(--bg3))`;
+      c.textContent = item.label;
+      grid.appendChild(c);
+    });
+  }
+  grid.style.gridAutoFlow = denseOn ? 'dense' : 'row';
+}
+
+el('denseToggle').addEventListener('click', () => {
+  denseOn = !denseOn;
+  el('denseToggle').textContent = `Dense: ${denseOn ? 'ON' : 'OFF'}`;
+  el('denseToggle').classList.toggle('active', denseOn);
+  el('denseCode').innerHTML = denseOn
+    ? `<span class="prop">.grid</span> {\n  <span class="kw">grid-auto-flow</span>: <span class="val">dense</span>; <span class="cmt">/* fill gaps with later items */</span>\n}`
+    : `<span class="prop">.grid</span> {\n  <span class="kw">grid-auto-flow</span>: <span class="val">row</span>; <span class="cmt">/* default: items go in order */</span>\n}`;
+  renderDenseGrid();
+});
+
+el('reshuffleBtn').addEventListener('click', () => renderDenseGrid(true));
+renderDenseGrid(true);
+
+// ─── Section 5: fr unit ──────────────────────────────────────
+function renderFrDemo() {
+  const val = el('frSelect').value;
+  const grid = el('fr-demo');
+  grid.style.gridTemplateColumns = val;
+  el('frCodeVal').textContent = val;
+
+  const colors = ['--accent','--accent2','--accent3','--accent4','--text'];
+  const trackDefs = val.split(/\s+(?=(?:[^()]*\([^()]*\))*[^()]*$)/);
+
+  grid.innerHTML = '';
+  trackDefs.forEach((def, i) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.style.borderColor = `var(${colors[i % colors.length]})`;
+    c.style.color = `var(${colors[i % colors.length]})`;
+    c.style.background = `color-mix(in srgb, var(${colors[i % colors.length]}) 12%, var(--bg3))`;
+    c.textContent = def.trim();
+    grid.appendChild(c);
+  });
+
+  const info = el('fr-info');
+  info.innerHTML = '';
+  info.appendChild(chip('columns', trackDefs.length));
+  info.appendChild(chip('definition', val));
+}
+
+el('frSelect').addEventListener('change', renderFrDemo);
+renderFrDemo();
+
+// ─── Section 6: Explicit vs Implicit ────────────────────────
+function renderImplicitGrid() {
+  const explRows  = +el('explicitRows').value;
+  const total     = +el('totalItems').value;
+  const autoH     = +el('autoRowHeight').value;
+
+  el('explicitRowsVal').textContent  = explRows;
+  el('totalItemsVal').textContent    = total;
+  el('autoRowHeightVal').textContent = autoH + 'px';
+
+  const grid = el('explicit-grid');
+  grid.style.gridTemplateRows = Array(explRows).fill('80px').join(' ');
+  grid.style.gridAutoRows = autoH + 'px';
+  grid.innerHTML = '';
+
+  const colors = ['--accent','--accent2','--accent3','--accent4'];
+  for (let i = 0; i < total; i++) {
+    const row = Math.floor(i / 4) + 1;
+    const isExplicit = row <= explRows;
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.style.borderColor = `var(${colors[i % colors.length]})`;
+    c.style.color = `var(${colors[i % colors.length]})`;
+    c.style.background = isExplicit
+      ? `color-mix(in srgb, var(${colors[i % colors.length]}) 20%, var(--bg3))`
+      : `var(--bg3)`;
+    c.textContent = isExplicit ? `explicit` : `implicit`;
+    c.title = isExplicit ? `Row ${row} — explicit (${80}px)` : `Row ${row} — implicit (${autoH}px)`;
+    grid.appendChild(c);
+  }
+
+  const info = el('implicit-info');
+  info.innerHTML = '';
+  const explCount = Math.min(total, explRows * 4);
+  const implCount = Math.max(0, total - explCount);
+  info.appendChild(chip('explicit items', explCount));
+  info.appendChild(chip('implicit items', implCount));
+  info.appendChild(chip('explicit row height', '80px'));
+  info.appendChild(chip('implicit row height (grid-auto-rows)', autoH + 'px'));
+}
+
+el('explicitRows').addEventListener('input',  renderImplicitGrid);
+el('totalItems').addEventListener('input',    renderImplicitGrid);
+el('autoRowHeight').addEventListener('input', renderImplicitGrid);
+renderImplicitGrid();
+</script>
+</body>
+</html>
