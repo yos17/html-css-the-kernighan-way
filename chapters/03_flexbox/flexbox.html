@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Own Flexbox Layout Engine — Chapter 3</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   THE LIBRARY: miniFlex — flexbox utility classes
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+body { line-height: 1.5; }
+
+/* Base flex */
+.flex     { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.inline-flex { display: inline-flex; }
+
+/* Direction */
+.flex-row         { flex-direction: row; }
+.flex-row-reverse { flex-direction: row-reverse; }
+.flex-col-reverse { flex-direction: column-reverse; }
+
+/* Wrap */
+.flex-wrap   { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+
+/* justify-content (main axis) */
+.justify-start   { justify-content: flex-start; }
+.justify-end     { justify-content: flex-end; }
+.justify-center  { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around  { justify-content: space-around; }
+.justify-evenly  { justify-content: space-evenly; }
+
+/* align-items (cross axis) */
+.items-start    { align-items: flex-start; }
+.items-end      { align-items: flex-end; }
+.items-center   { align-items: center; }
+.items-stretch  { align-items: stretch; }
+.items-baseline { align-items: baseline; }
+
+/* align-self */
+.self-start   { align-self: flex-start; }
+.self-end     { align-self: flex-end; }
+.self-center  { align-self: center; }
+.self-stretch { align-self: stretch; }
+
+/* Flex item sizing */
+.flex-1    { flex: 1 1 0%; }
+.flex-auto { flex: 1 1 auto; }
+.flex-none { flex: none; }
+.grow      { flex-grow: 1; }
+.grow-0    { flex-grow: 0; }
+.shrink    { flex-shrink: 1; }
+.shrink-0  { flex-shrink: 0; }
+
+/* Gap */
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+.gap-8 { gap: 2rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DEMO STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --font-base:    system-ui, sans-serif;
+  --font-mono:    ui-monospace, monospace;
+  --color-text:   #1e293b;
+  --color-muted:  #64748b;
+  --color-bg:     #f8fafc;
+  --color-surface:#ffffff;
+  --color-border: #e2e8f0;
+  --color-accent: #7c3aed;
+  --space:        1rem;
+  --radius:       0.5rem;
+}
+
+body {
+  font-family: var(--font-base);
+  background:  var(--color-bg);
+  color:       var(--color-text);
+}
+
+.page {
+  max-width: 900px;
+  margin:    0 auto;
+  padding:   2rem 1rem 4rem;
+}
+
+h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.25rem; }
+h2 { font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.75rem; }
+p  { font-size: 0.9rem; color: var(--color-muted); margin-bottom: 1rem; }
+
+.section {
+  background:    var(--color-surface);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding:       1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Demo boxes */
+.box {
+  background:    var(--color-accent);
+  color:         white;
+  width:         60px;
+  height:        60px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight:   700;
+  font-size:     1.1rem;
+  flex-shrink:   0;
+}
+
+.box-sm {
+  background:    var(--color-accent);
+  color:         white;
+  padding:       0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size:     0.8rem;
+  font-family:   var(--font-mono);
+  white-space:   nowrap;
+  flex-shrink:   0;
+}
+
+.box-tall { height: 80px; }
+.box-short { height: 40px; }
+
+.container-box {
+  background:    #f5f3ff;
+  border:        2px dashed #7c3aed;
+  border-radius: var(--radius);
+  padding:       0.75rem;
+  min-height:    100px;
+}
+
+/* Controls */
+.controls {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ctrl-btn {
+  padding:       0.3rem 0.7rem;
+  background:    var(--color-bg);
+  border:        1px solid var(--color-border);
+  border-radius: 4px;
+  cursor:        pointer;
+  font-size:     0.78rem;
+  font-family:   var(--font-mono);
+  transition:    all 0.15s;
+  color:         var(--color-text);
+}
+.ctrl-btn:hover  { border-color: var(--color-accent); color: var(--color-accent); }
+.ctrl-btn.active { background: var(--color-accent); color: white; border-color: var(--color-accent); }
+.ctrl-label { font-size: 0.75rem; color: var(--color-muted); align-self: center; font-weight: 600; }
+
+/* CSS snippet */
+.css-snippet {
+  background:    #1e1b4b;
+  color:         #c4b5fd;
+  padding:       0.75rem 1rem;
+  border-radius: var(--radius);
+  font-family:   var(--font-mono);
+  font-size:     0.8rem;
+  line-height:   1.6;
+  margin-top:    0.75rem;
+}
+.css-prop  { color: #93c5fd; }
+.css-value { color: #86efac; }
+
+/* Playground */
+#playground-container {
+  background:    #f5f3ff;
+  border:        2px dashed #7c3aed;
+  border-radius: var(--radius);
+  padding:       1rem;
+  min-height:    120px;
+  display:       flex;
+  transition:    all 0.3s;
+}
+
+/* Real-world examples */
+.nav-demo {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  padding:         0.75rem 1.25rem;
+  background:      #1e293b;
+  border-radius:   var(--radius);
+}
+.nav-logo { color: white; font-weight: 700; }
+.nav-links { display: flex; gap: 1.25rem; list-style: none; }
+.nav-links a { color: #94a3b8; text-decoration: none; font-size: 0.875rem; }
+.nav-links a:hover { color: white; }
+
+.media-demo {
+  display: flex;
+  gap:     1rem;
+  align-items: flex-start;
+}
+.media-avatar {
+  width:         48px; height: 48px;
+  background:    #7c3aed;
+  border-radius: 50%;
+  flex-shrink:   0;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  color:         white;
+  font-weight:   700;
+}
+.media-body { flex: 1; min-width: 0; }
+.media-name { font-weight: 600; }
+.media-text { font-size: 0.875rem; color: var(--color-muted); }
+
+.card-stack {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       1rem;
+}
+.flex-card {
+  flex:          1 1 180px;
+  background:    #f5f3ff;
+  border:        1px solid #ddd6fe;
+  border-radius: var(--radius);
+  padding:       1rem;
+  display:       flex;
+  flex-direction: column;
+  gap:           0.5rem;
+}
+.flex-card-title { font-weight: 600; color: var(--color-accent); }
+.flex-card-body  { flex: 1; font-size: 0.85rem; color: var(--color-muted); }
+.flex-card-btn   {
+  padding:       0.4rem 0.75rem;
+  background:    var(--color-accent);
+  color:         white;
+  border:        none;
+  border-radius: 4px;
+  font-size:     0.8rem;
+  cursor:        pointer;
+  align-self:    flex-start;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Build Your Own Flexbox Layout Engine</h1>
+  <p style="color:var(--color-muted);margin-bottom:2rem">Chapter 3 — Flex containers, axes, alignment, wrapping, gap</p>
+
+  <!-- ─── PLAYGROUND ──────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Interactive Playground</h2>
+    <p>Adjust the flex container properties. Watch how items reflow.</p>
+
+    <div class="controls" id="dir-controls">
+      <span class="ctrl-label">direction:</span>
+      <button class="ctrl-btn active" data-prop="flexDirection" data-val="row">row</button>
+      <button class="ctrl-btn" data-prop="flexDirection" data-val="row-reverse">row-reverse</button>
+      <button class="ctrl-btn" data-prop="flexDirection" data-val="column">column</button>
+      <button class="ctrl-btn" data-prop="flexDirection" data-val="column-reverse">column-reverse</button>
+    </div>
+
+    <div class="controls" id="jc-controls">
+      <span class="ctrl-label">justify-content:</span>
+      <button class="ctrl-btn active" data-prop="justifyContent" data-val="flex-start">flex-start</button>
+      <button class="ctrl-btn" data-prop="justifyContent" data-val="flex-end">flex-end</button>
+      <button class="ctrl-btn" data-prop="justifyContent" data-val="center">center</button>
+      <button class="ctrl-btn" data-prop="justifyContent" data-val="space-between">space-between</button>
+      <button class="ctrl-btn" data-prop="justifyContent" data-val="space-around">space-around</button>
+      <button class="ctrl-btn" data-prop="justifyContent" data-val="space-evenly">space-evenly</button>
+    </div>
+
+    <div class="controls" id="ai-controls">
+      <span class="ctrl-label">align-items:</span>
+      <button class="ctrl-btn" data-prop="alignItems" data-val="flex-start">flex-start</button>
+      <button class="ctrl-btn" data-prop="alignItems" data-val="flex-end">flex-end</button>
+      <button class="ctrl-btn" data-prop="alignItems" data-val="center">center</button>
+      <button class="ctrl-btn active" data-prop="alignItems" data-val="stretch">stretch</button>
+      <button class="ctrl-btn" data-prop="alignItems" data-val="baseline">baseline</button>
+    </div>
+
+    <div class="controls" id="wrap-controls">
+      <span class="ctrl-label">flex-wrap:</span>
+      <button class="ctrl-btn active" data-prop="flexWrap" data-val="nowrap">nowrap</button>
+      <button class="ctrl-btn" data-prop="flexWrap" data-val="wrap">wrap</button>
+      <button class="ctrl-btn" data-prop="flexWrap" data-val="wrap-reverse">wrap-reverse</button>
+    </div>
+
+    <div id="playground-container">
+      <div class="box" style="height:80px">A</div>
+      <div class="box" style="height:50px">B</div>
+      <div class="box" style="height:70px">C</div>
+      <div class="box" style="height:40px">D</div>
+      <div class="box" style="height:60px">E</div>
+    </div>
+
+    <div class="css-snippet" id="css-output">
+      <span class="css-prop">display</span>: <span class="css-value">flex</span>;<br>
+      <span class="css-prop">flex-direction</span>: <span class="css-value" id="out-dir">row</span>;<br>
+      <span class="css-prop">justify-content</span>: <span class="css-value" id="out-jc">flex-start</span>;<br>
+      <span class="css-prop">align-items</span>: <span class="css-value" id="out-ai">stretch</span>;<br>
+      <span class="css-prop">flex-wrap</span>: <span class="css-value" id="out-wrap">nowrap</span>;
+    </div>
+  </div>
+
+  <!-- ─── JUSTIFY VISUALIZER ──────────────────────────────────────── -->
+  <div class="section">
+    <h2>justify-content Visual Guide</h2>
+    <p>All six values on the main axis (row direction). Each box is the same size.</p>
+    <div id="jc-demos" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+  </div>
+
+  <!-- ─── ALIGN-ITEMS VISUALIZER ──────────────────────────────────── -->
+  <div class="section">
+    <h2>align-items Visual Guide</h2>
+    <p>Items have different heights. See how each alignment value positions them on the cross axis.</p>
+    <div id="ai-demos" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+  </div>
+
+  <!-- ─── FLEX SIZING ─────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>flex-grow, flex-shrink, flex-basis</h2>
+    <p>How items claim (or refuse to claim) remaining space.</p>
+    <div style="display:flex;flex-direction:column;gap:0.75rem" id="flex-size-demos"></div>
+  </div>
+
+  <!-- ─── REAL-WORLD PATTERNS ─────────────────────────────────────── -->
+  <div class="section">
+    <h2>Real-World Patterns</h2>
+
+    <h2 style="font-size:0.9rem;margin-top:0">Navigation bar</h2>
+    <nav class="nav-demo" style="margin-bottom:1.25rem">
+      <div class="nav-logo">miniCSS</div>
+      <ul class="nav-links">
+        <li><a href="#">Docs</a></li>
+        <li><a href="#">Examples</a></li>
+        <li><a href="#">GitHub</a></li>
+      </ul>
+    </nav>
+
+    <h2 style="font-size:0.9rem;margin-top:0">Media object (image + text)</h2>
+    <div class="media-demo" style="margin-bottom:1.25rem">
+      <div class="media-avatar">K</div>
+      <div class="media-body">
+        <div class="media-name">Brian Kernighan</div>
+        <div class="media-text">Co-author of The C Programming Language. The flex-shrink: 0 on the avatar ensures it never collapses when text is long.</div>
+      </div>
+    </div>
+
+    <h2 style="font-size:0.9rem;margin-top:0">Responsive card stack (flex-wrap + flex-basis)</h2>
+    <div class="card-stack">
+      <div class="flex-card">
+        <div class="flex-card-title">Reset</div>
+        <div class="flex-card-body">Box model, cascade, inheritance. The foundation everything else builds on.</div>
+        <button class="flex-card-btn">Read</button>
+      </div>
+      <div class="flex-card">
+        <div class="flex-card-title">Grid</div>
+        <div class="flex-card-body">12-column responsive grid. fr units, named areas, auto-fit.</div>
+        <button class="flex-card-btn">Read</button>
+      </div>
+      <div class="flex-card">
+        <div class="flex-card-title">Flexbox</div>
+        <div class="flex-card-body">1D alignment engine. justify-content, align-items, flex sizing.</div>
+        <button class="flex-card-btn">Read</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  PLAYGROUND
+// ═══════════════════════════════════════════════════════════════════════
+
+const container = document.getElementById('playground-container');
+const state = {
+  flexDirection:  'row',
+  justifyContent: 'flex-start',
+  alignItems:     'stretch',
+  flexWrap:       'nowrap',
+};
+
+document.querySelectorAll('.ctrl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const prop = btn.dataset.prop;
+    const val  = btn.dataset.val;
+
+    // Update active state in same group
+    btn.closest('.controls').querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    state[prop] = val;
+    applyState();
+  });
+});
+
+function applyState() {
+  Object.assign(container.style, {
+    flexDirection:  state.flexDirection,
+    justifyContent: state.justifyContent,
+    alignItems:     state.alignItems,
+    flexWrap:       state.flexWrap,
+  });
+  document.getElementById('out-dir').textContent  = state.flexDirection;
+  document.getElementById('out-jc').textContent   = state.justifyContent;
+  document.getElementById('out-ai').textContent   = state.alignItems;
+  document.getElementById('out-wrap').textContent = state.flexWrap;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  JUSTIFY-CONTENT DEMOS
+// ═══════════════════════════════════════════════════════════════════════
+
+const jcValues = ['flex-start','flex-end','center','space-between','space-around','space-evenly'];
+const jcContainer = document.getElementById('jc-demos');
+
+jcValues.forEach(val => {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `<div style="font-size:0.7rem;font-family:var(--font-mono);color:var(--color-muted);margin-bottom:3px">${val}</div>`;
+  const row = document.createElement('div');
+  row.style.cssText = `display:flex;justify-content:${val};align-items:center;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:0.5rem;gap:0.5rem`;
+  ['A','B','C'].forEach(l => {
+    const b = document.createElement('div');
+    b.className = 'box-sm';
+    b.textContent = l;
+    row.appendChild(b);
+  });
+  wrap.appendChild(row);
+  jcContainer.appendChild(wrap);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ALIGN-ITEMS DEMOS
+// ═══════════════════════════════════════════════════════════════════════
+
+const aiValues = ['flex-start','flex-end','center','stretch','baseline'];
+const heights  = [60, 40, 80];  /* different heights */
+const aiContainer = document.getElementById('ai-demos');
+
+aiValues.forEach(val => {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `<div style="font-size:0.7rem;font-family:var(--font-mono);color:var(--color-muted);margin-bottom:3px">${val}</div>`;
+  const row = document.createElement('div');
+  row.style.cssText = `display:flex;align-items:${val};background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:0.5rem;gap:0.5rem;height:90px`;
+  heights.forEach((h, i) => {
+    const b = document.createElement('div');
+    b.style.cssText = `background:#7c3aed;color:white;width:50px;${val==='stretch'?'':'height:'+h+'px'};display:flex;align-items:center;justify-content:center;border-radius:4px;font-weight:700;font-size:0.85rem`;
+    b.textContent = String.fromCharCode(65 + i);
+    row.appendChild(b);
+  });
+  wrap.appendChild(row);
+  aiContainer.appendChild(wrap);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FLEX SIZING DEMOS
+// ═══════════════════════════════════════════════════════════════════════
+
+const sizeDemos = [
+  {
+    label: 'flex: none — items stay their content size',
+    items: [
+      { label: 'Short',       style: 'flex:none' },
+      { label: 'Medium text', style: 'flex:none' },
+      { label: 'A bit longer label', style: 'flex:none' },
+    ]
+  },
+  {
+    label: 'flex: 1 — items share space equally (ignore content size)',
+    items: [
+      { label: 'Short',       style: 'flex:1' },
+      { label: 'Medium text', style: 'flex:1' },
+      { label: 'A bit longer label', style: 'flex:1' },
+    ]
+  },
+  {
+    label: 'flex: auto — items grow from content size, then share remaining',
+    items: [
+      { label: 'Short',       style: 'flex:auto' },
+      { label: 'Medium text', style: 'flex:auto' },
+      { label: 'A bit longer label', style: 'flex:auto' },
+    ]
+  },
+  {
+    label: 'Mixed: flex-shrink: 0 on first (fixed), flex: 1 on last (fills)',
+    items: [
+      { label: '48px avatar', style: 'flex:none;width:48px;height:48px;border-radius:50%' },
+      { label: 'flex: 1 — fills remaining width', style: 'flex:1' },
+    ]
+  },
+];
+
+const sizeContainer = document.getElementById('flex-size-demos');
+sizeDemos.forEach(({ label, items }) => {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `<div style="font-size:0.75rem;color:var(--color-muted);margin-bottom:4px">${label}</div>`;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:0.5rem;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:0.5rem';
+  items.forEach(({ label: l, style }) => {
+    const b = document.createElement('div');
+    b.style.cssText = `${style};background:#7c3aed;color:white;padding:0.4rem 0.5rem;border-radius:4px;font-size:0.75rem;font-family:var(--font-mono);display:flex;align-items:center;justify-content:center;text-align:center;min-width:0`;
+    b.textContent = l;
+    row.appendChild(b);
+  });
+  wrap.appendChild(row);
+  sizeContainer.appendChild(wrap);
+});
+</script>
+</body>
+</html>

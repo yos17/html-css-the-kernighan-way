@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 7 — Component Library Showcase</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0d1a;
+    --bg2:      #111122;
+    --bg3:      #1a1a2e;
+    --bg4:      #16213e;
+    --text:     #c8c8d8;
+    --text-dim: #7878a0;
+    --accent:   #a8d8ea;
+    --accent2:  #e8a0d8;
+    --accent3:  #a8eac8;
+    --accent4:  #ead8a8;
+    --border:   #2a2a40;
+    --r-sm:  4px;
+    --r-md:  6px;
+    --r-lg:  8px;
+    --r-pill: 999px;
+    --mono:  'Courier New', monospace;
+    --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ─── Page layout ─────────────────────────────────────── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+
+  h1 { font-size: 1.6rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-dim); margin-bottom: 2.5rem; font-size: 0.875rem; }
+  h2 {
+    font-size: 1rem; color: var(--accent); margin-bottom: 1rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  h3 { font-size: 0.875rem; color: var(--accent2); margin-bottom: 0.75rem; }
+
+  .section { margin-bottom: 3rem; }
+  .divider { height: 1px; background: var(--border); margin: 2.5rem 0; }
+  .chapter-tag { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+  .col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .col-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+  .demo-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 1.25rem;
+  }
+
+  pre {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r-md); padding: 0.875rem 1rem;
+    font-size: 0.775rem; line-height: 1.7; color: #a8c8ff;
+    overflow-x: auto; margin-top: 0.75rem;
+  }
+  .kw { color: #a8d8ea; } .prop { color: #e8a0d8; }
+  .val { color: #a8eac8; } .cmt { color: #555577; }
+
+  code { color: var(--accent); font-size: 0.85em; }
+
+  .section-desc { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1.25rem; line-height: 1.6; }
+
+  /* ═══════════════════════════════════════════════════════
+     BUTTON COMPONENT
+  ═══════════════════════════════════════════════════════ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.45rem; padding: 0.5rem 1.25rem;
+    font-family: var(--mono); font-size: 0.875rem; font-weight: 500;
+    line-height: 1.5; white-space: nowrap; text-decoration: none;
+    border: 1px solid transparent; border-radius: var(--r-md);
+    cursor: pointer; user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s,
+                box-shadow 0.15s, opacity 0.15s, filter 0.15s;
+  }
+
+  .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+  .btn:disabled, .btn[aria-disabled="true"] {
+    opacity: 0.45; cursor: not-allowed; pointer-events: none;
+  }
+
+  /* Variants */
+  .btn--primary   { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .btn--primary:hover  { background: #1d4ed8; border-color: #1d4ed8; }
+  .btn--primary:active { filter: brightness(0.9); }
+
+  .btn--secondary { background: var(--bg3); color: var(--text); border-color: var(--border); }
+  .btn--secondary:hover  { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .btn--secondary:active { filter: brightness(0.85); }
+
+  .btn--danger  { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .btn--danger:hover  { background: #ef4444; border-color: #ef4444; }
+  .btn--danger:active { filter: brightness(0.9); }
+
+  .btn--success { background: #16a34a; color: #fff; border-color: #16a34a; }
+  .btn--success:hover  { background: #15803d; border-color: #15803d; }
+
+  .btn--ghost {
+    background: transparent; color: var(--accent); border-color: transparent;
+  }
+  .btn--ghost:hover { background: rgba(168,216,234,0.08); }
+
+  .btn--outline {
+    background: transparent; color: var(--accent); border-color: var(--accent);
+  }
+  .btn--outline:hover { background: rgba(168,216,234,0.1); }
+
+  /* Sizes */
+  .btn--sm { padding: 0.25rem 0.75rem; font-size: 0.775rem; border-radius: var(--r-sm); }
+  .btn--lg { padding: 0.75rem 1.75rem; font-size: 1rem;     border-radius: var(--r-lg); }
+
+  /* Icon button */
+  .btn--icon {
+    padding: 0.5rem; width: 2.25rem; height: 2.25rem;
+    border-radius: var(--r-md); position: relative;
+  }
+  .btn--icon.btn--sm { width: 1.75rem; height: 1.75rem; padding: 0.25rem; }
+
+  .btn--icon::after {
+    content: attr(aria-label);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg3); color: var(--text); font-size: 0.7rem;
+    padding: 0.2rem 0.5rem; border-radius: 3px; border: 1px solid var(--border);
+    white-space: nowrap; pointer-events: none; opacity: 0;
+    transition: opacity 0.15s; z-index: 10;
+  }
+  .btn--icon:hover::after { opacity: 1; }
+
+  /* Loading */
+  .btn--loading {
+    position: relative; color: transparent !important; pointer-events: none;
+  }
+  .btn--loading::after {
+    content: ''; position: absolute;
+    width: 1rem; height: 1rem;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Button group */
+  .btn-group { display: inline-flex; }
+  .btn-group .btn { border-radius: 0; margin-inline-start: -1px; position: relative; z-index: 0; }
+  .btn-group .btn:first-child { border-radius: var(--r-md) 0 0 var(--r-md); margin-inline-start: 0; }
+  .btn-group .btn:last-child  { border-radius: 0 var(--r-md) var(--r-md) 0; }
+  .btn-group .btn:hover,
+  .btn-group .btn:focus-visible { z-index: 1; }
+  .btn-group .btn.active { background: var(--bg4); color: var(--accent); border-color: var(--accent); z-index: 1; }
+
+  /* ═══════════════════════════════════════════════════════
+     CARD COMPONENT
+  ═══════════════════════════════════════════════════════ */
+  .card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+  .card__header { padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .card__body   { padding: 1.25rem; color: var(--text-dim); font-size: 0.875rem; line-height: 1.6; }
+  .card__footer { padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; align-items: center; }
+  .card__media  { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: linear-gradient(135deg, var(--bg4), var(--bg2)); }
+
+  .card--interactive {
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .card--interactive:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  }
+
+  .card--skeleton .skeleton-line {
+    height: 0.875rem; border-radius: 4px; margin-bottom: 0.5rem;
+    background: linear-gradient(90deg, var(--bg4) 25%, var(--bg3) 50%, var(--bg4) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .card--skeleton .skeleton-line--sm { width: 40%; }
+  .card--skeleton .skeleton-line--md { width: 65%; }
+
+  /* ═══════════════════════════════════════════════════════
+     BADGE COMPONENT
+  ═══════════════════════════════════════════════════════ */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem; font-weight: 600; line-height: 1.4;
+    border-radius: var(--r-pill); border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .badge--dot::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: currentColor; flex-shrink: 0;
+  }
+
+  .badge--default  { background: #1a1a3e; color: #a8d8ea; border-color: #2a2a50; }
+  .badge--primary  { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
+  .badge--success  { background: #052e16; color: #4ade80; border-color: #166534; }
+  .badge--warning  { background: #2d1a03; color: #fbbf24; border-color: #78350f; }
+  .badge--danger   { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
+  .badge--neutral  { background: #1f2937; color: #9ca3af; border-color: #374151; }
+
+  /* Progress badge */
+  .badge--progress {
+    --progress: 0;
+    gap: 0.4rem; padding-inline-start: 0.3rem;
+  }
+  .badge--progress::before {
+    content: ''; display: inline-block;
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(
+      currentColor calc(var(--progress) * 1%),
+      rgba(255,255,255,0.15) calc(var(--progress) * 1%)
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     ALERT COMPONENT
+  ═══════════════════════════════════════════════════════ */
+  .alert {
+    display: flex; gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--r-lg); border: 1px solid transparent;
+    font-size: 0.875rem; line-height: 1.5;
+  }
+  .alert__icon  { font-size: 1.1rem; flex-shrink: 0; line-height: 1.55; }
+  .alert__body  { flex: 1; min-width: 0; }
+  .alert__title { font-weight: 600; margin-bottom: 0.2rem; }
+  .alert__close {
+    background: none; border: none; cursor: pointer;
+    padding: 0; font-size: 1rem; line-height: 1; opacity: 0.6;
+    flex-shrink: 0; color: currentColor; align-self: flex-start;
+    transition: opacity 0.15s;
+  }
+  .alert__close:hover { opacity: 1; }
+
+  .alert--info    { background: #0c1a2e; color: #93c5fd; border-color: #1e3a5f; }
+  .alert--success { background: #052e16; color: #86efac; border-color: #14532d; }
+  .alert--warning { background: #1c0f03; color: #fcd34d; border-color: #78350f; }
+  .alert--error   { background: #1c0505; color: #fca5a5; border-color: #7f1d1d; }
+
+  /* Dismissible animation */
+  .alert--dismissible {
+    max-height: 200px; overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease,
+                padding 0.3s ease, margin-bottom 0.3s ease;
+    margin-bottom: 0.75rem;
+  }
+  .alert--dismissed {
+    max-height: 0; opacity: 0; padding-block: 0; margin-bottom: 0;
+    border-width: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     STATE PLAYGROUND
+  ═══════════════════════════════════════════════════════ */
+  .state-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .state-cell {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r-md); padding: 0.75rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    align-items: flex-start;
+  }
+  .state-label { font-size: 0.7rem; color: var(--text-dim); }
+
+  /* Force states via JS-applied classes */
+  .force-hover { background: var(--bg4) !important; border-color: var(--accent) !important; color: var(--accent) !important; }
+  .force-active { filter: brightness(0.85) !important; }
+  .force-focus  { box-shadow: var(--focus-ring) !important; }
+
+  /* ─── Token table ───────────────────────────────────── */
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .token-swatch {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r-md); overflow: hidden;
+  }
+
+  .token-color {
+    height: 36px;
+  }
+
+  .token-info {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .token-name { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="chapter-tag">HTML &amp; CSS: The Kernighan Way</div>
+  <h1>Chapter 7 — Component Library</h1>
+  <p class="subtitle">Buttons, cards, badges, and alerts — built with BEM naming, design tokens, and full state handling.</p>
+
+  <!-- ─── 1: Buttons ───────────────────────────────────── -->
+  <div class="section">
+    <h2>1. Buttons</h2>
+    <p class="section-desc">All variants with all states. Tab through them to see focus rings.</p>
+
+    <h3>Variants</h3>
+    <div class="demo-box">
+      <div class="row">
+        <button class="btn btn--primary">Primary</button>
+        <button class="btn btn--secondary">Secondary</button>
+        <button class="btn btn--danger">Danger</button>
+        <button class="btn btn--success">Success</button>
+        <button class="btn btn--ghost">Ghost</button>
+        <button class="btn btn--outline">Outline</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Sizes</h3>
+    <div class="demo-box">
+      <div class="row" style="align-items:center;">
+        <button class="btn btn--primary btn--sm">Small</button>
+        <button class="btn btn--primary">Default</button>
+        <button class="btn btn--primary btn--lg">Large</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Disabled State</h3>
+    <div class="demo-box">
+      <div class="row">
+        <button class="btn btn--primary" disabled>Primary</button>
+        <button class="btn btn--secondary" disabled>Secondary</button>
+        <button class="btn btn--danger" disabled>Danger</button>
+        <button class="btn btn--ghost" disabled>Ghost</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Icon Buttons (hover for tooltip)</h3>
+    <div class="demo-box">
+      <div class="row">
+        <button class="btn btn--secondary btn--icon" aria-label="Edit item">✎</button>
+        <button class="btn btn--secondary btn--icon" aria-label="Delete item">✕</button>
+        <button class="btn btn--secondary btn--icon" aria-label="Copy to clipboard">⎘</button>
+        <button class="btn btn--primary btn--icon" aria-label="Add new item">+</button>
+        <button class="btn btn--danger btn--icon" aria-label="Remove permanently">⊗</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Loading State</h3>
+    <div class="demo-box">
+      <div class="row">
+        <button class="btn btn--primary btn--loading">Save</button>
+        <button class="btn btn--secondary btn--loading">Loading</button>
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem;">
+          Text is transparent (not removed) so width stays stable.
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Button Group</h3>
+    <div class="demo-box">
+      <div class="row">
+        <div class="btn-group" role="group" aria-label="View mode">
+          <button class="btn btn--secondary active">Grid</button>
+          <button class="btn btn--secondary">List</button>
+          <button class="btn btn--secondary">Table</button>
+        </div>
+        <div class="btn-group" role="group" aria-label="Text formatting">
+          <button class="btn btn--secondary btn--sm active">B</button>
+          <button class="btn btn--secondary btn--sm" style="font-style:italic">I</button>
+          <button class="btn btn--secondary btn--sm" style="text-decoration:underline">U</button>
+          <button class="btn btn--secondary btn--sm" style="text-decoration:line-through">S</button>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1rem;">Interactive State Playground</h3>
+    <p class="section-desc">Simulate pseudo-class states to see what each one looks like.</p>
+    <div class="demo-box">
+      <div class="state-grid" id="stateGrid">
+        <div class="state-cell">
+          <div class="state-label">:default (resting)</div>
+          <button class="btn btn--primary" tabindex="-1">Button</button>
+        </div>
+        <div class="state-cell">
+          <div class="state-label">:hover (mouse over)</div>
+          <button class="btn btn--primary force-hover" tabindex="-1">Button</button>
+        </div>
+        <div class="state-cell">
+          <div class="state-label">:active (being clicked)</div>
+          <button class="btn btn--primary force-active force-hover" tabindex="-1">Button</button>
+        </div>
+        <div class="state-cell">
+          <div class="state-label">:focus-visible (keyboard)</div>
+          <button class="btn btn--primary force-focus" tabindex="-1">Button</button>
+        </div>
+        <div class="state-cell">
+          <div class="state-label">:disabled</div>
+          <button class="btn btn--primary" disabled tabindex="-1">Button</button>
+        </div>
+        <div class="state-cell">
+          <div class="state-label">:hover + :focus-visible</div>
+          <button class="btn btn--primary force-hover force-focus" tabindex="-1">Button</button>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="prop">.btn</span>:focus-visible {
+  <span class="kw">outline</span>: <span class="val">none</span>;
+  <span class="cmt">/* double ring: inner matches bg, outer is visible on any bg */</span>
+  <span class="kw">box-shadow</span>: <span class="val">0 0 0 2px #0d0d1a, 0 0 0 4px #a8d8ea</span>;
+}
+
+<span class="prop">.btn</span>:disabled {
+  <span class="kw">opacity</span>: <span class="val">0.45</span>;
+  <span class="kw">cursor</span>: <span class="val">not-allowed</span>;
+  <span class="kw">pointer-events</span>: <span class="val">none</span>; <span class="cmt">/* prevents :hover while disabled */</span>
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 2: Cards ─────────────────────────────────────── -->
+  <div class="section">
+    <h2>2. Cards</h2>
+    <p class="section-desc">Card with header, body, footer. Hover the interactive card.</p>
+
+    <div class="col-3" style="margin-bottom:1rem;">
+      <!-- Standard card -->
+      <div class="card">
+        <div class="card__header">
+          Standard Card
+          <span class="badge badge--default">v1</span>
+        </div>
+        <div class="card__body">
+          A card with header, body, and footer sections. Uses BEM: <code>.card__header</code>, <code>.card__body</code>, <code>.card__footer</code>.
+        </div>
+        <div class="card__footer">
+          <button class="btn btn--primary btn--sm">Action</button>
+          <button class="btn btn--ghost btn--sm">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Interactive card -->
+      <div class="card card--interactive" tabindex="0" role="button" aria-label="Interactive card">
+        <div class="card__header">
+          Interactive Card
+          <span class="badge badge--success badge--dot">Hover me</span>
+        </div>
+        <div class="card__body">
+          Hover or focus this card to see the lift effect. Uses <code>transform: translateY(-2px)</code> and <code>box-shadow</code>.
+        </div>
+        <div class="card__footer" style="color:var(--text-dim);font-size:0.75rem;">
+          Click to open →
+        </div>
+      </div>
+
+      <!-- Skeleton card -->
+      <div class="card card--skeleton">
+        <div class="card__header">
+          <div class="skeleton-line skeleton-line--md" style="height:0.875rem;"></div>
+        </div>
+        <div class="card__body">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line skeleton-line--sm"></div>
+        </div>
+        <div class="card__footer">
+          <div class="skeleton-line skeleton-line--sm" style="height:1.75rem;border-radius:var(--r-md);"></div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* BEM structure */</span>
+<span class="prop">.card</span>           { <span class="cmt">/* block */</span> }
+<span class="prop">.card__header</span>   { <span class="cmt">/* element */</span> }
+<span class="prop">.card__body</span>     { <span class="cmt">/* element */</span> }
+<span class="prop">.card__footer</span>   { <span class="cmt">/* element */</span> }
+<span class="prop">.card--interactive</span> { <span class="cmt">/* modifier */</span> }</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 3: Badges ────────────────────────────────────── -->
+  <div class="section">
+    <h2>3. Badges</h2>
+    <p class="section-desc">Inline status indicators. All variants, with dot decorators and progress.</p>
+
+    <div class="demo-box">
+      <div class="row" style="margin-bottom:1rem;">
+        <span class="badge badge--default">Default</span>
+        <span class="badge badge--primary">Primary</span>
+        <span class="badge badge--success">Success</span>
+        <span class="badge badge--warning">Warning</span>
+        <span class="badge badge--danger">Danger</span>
+        <span class="badge badge--neutral">Neutral</span>
+      </div>
+
+      <div class="row" style="margin-bottom:1rem;">
+        <span class="badge badge--default  badge--dot">Idle</span>
+        <span class="badge badge--success  badge--dot">Online</span>
+        <span class="badge badge--warning  badge--dot">Away</span>
+        <span class="badge badge--danger   badge--dot">Offline</span>
+      </div>
+
+      <div class="row">
+        <span class="badge badge--primary  badge--progress" style="--progress:25">25%</span>
+        <span class="badge badge--success  badge--progress" style="--progress:60">60%</span>
+        <span class="badge badge--warning  badge--progress" style="--progress:80">80%</span>
+        <span class="badge badge--danger   badge--progress" style="--progress:95">95%</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1.25rem;">Interactive Progress</h3>
+    <div class="demo-box">
+      <div class="row" style="align-items:center;">
+        <label style="color:var(--text-dim);font-size:0.8rem;">Progress:</label>
+        <input type="range" id="progressRange" min="0" max="100" value="42" style="accent-color:var(--accent);width:150px;">
+        <span id="progressVal" style="color:var(--accent);font-size:0.8rem;">42%</span>
+        <span class="badge badge--primary badge--progress" id="progressBadge" style="--progress:42">42%</span>
+        <span class="badge badge--success badge--progress" id="progressBadge2" style="--progress:42">42%</span>
+      </div>
+    </div>
+
+    <pre><span class="prop">.badge--progress</span>::before {
+  <span class="kw">content</span>: <span class="val">''</span>;
+  <span class="kw">background</span>: <span class="val">conic-gradient</span>(
+    <span class="val">currentColor calc(var(--progress) * 1%)</span>,
+    <span class="val">rgba(255,255,255,0.15) calc(var(--progress) * 1%)</span>
+  );
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 4: Alerts ────────────────────────────────────── -->
+  <div class="section">
+    <h2>4. Alerts</h2>
+    <p class="section-desc">Four semantic alert types. Click the × to dismiss with a height transition.</p>
+
+    <div id="alertsContainer">
+      <div class="alert alert--info alert--dismissible">
+        <span class="alert__icon">ℹ</span>
+        <div class="alert__body">
+          <div class="alert__title">Information</div>
+          This is an informational alert. It uses <code>currentColor</code> so the icon and close button inherit the text color automatically.
+        </div>
+        <button class="alert__close" aria-label="Dismiss">×</button>
+      </div>
+
+      <div class="alert alert--success alert--dismissible">
+        <span class="alert__icon">✓</span>
+        <div class="alert__body">
+          <div class="alert__title">Success</div>
+          Your changes have been saved. The operation completed without errors.
+        </div>
+        <button class="alert__close" aria-label="Dismiss">×</button>
+      </div>
+
+      <div class="alert alert--warning alert--dismissible">
+        <span class="alert__icon">⚠</span>
+        <div class="alert__body">
+          <div class="alert__title">Warning</div>
+          Your session will expire in 5 minutes. Save your work to avoid losing changes.
+        </div>
+        <button class="alert__close" aria-label="Dismiss">×</button>
+      </div>
+
+      <div class="alert alert--error alert--dismissible">
+        <span class="alert__icon">✕</span>
+        <div class="alert__body">
+          <div class="alert__title">Error</div>
+          Failed to connect to the server. Check your network connection and try again.
+        </div>
+        <button class="alert__close" aria-label="Dismiss">×</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:0.75rem;">
+      <button class="btn btn--secondary btn--sm" id="restoreAlerts">Restore all alerts</button>
+    </div>
+
+    <pre><span class="prop">.alert--info</span>  { <span class="kw">background</span>: <span class="val">#0c1a2e</span>; <span class="kw">color</span>: <span class="val">#93c5fd</span>; }
+<span class="cmt">/* icon and close button get the same color automatically: */</span>
+<span class="prop">.alert__icon</span>  { <span class="kw">color</span>: <span class="val">currentColor</span>; }
+<span class="prop">.alert__close</span> { <span class="kw">color</span>: <span class="val">currentColor</span>; }</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 5: Design Token System ───────────────────────── -->
+  <div class="section">
+    <h2>5. Design Token System</h2>
+    <p class="section-desc">All components share these tokens. Click a token to change it and see all components update.</p>
+
+    <div class="token-grid" id="tokenGrid">
+      <!-- populated by JS -->
+    </div>
+
+    <h3 style="margin-top:1.25rem;">Live Theme Switcher</h3>
+    <div class="demo-box">
+      <div class="row">
+        <button class="btn btn--secondary btn--sm" id="themeBtn" onclick="cycleTheme()">Cycle Theme</button>
+        <span id="themeLabel" style="color:var(--text-dim);font-size:0.75rem;">Current: Dark (default)</span>
+      </div>
+      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;" id="themePreview">
+        <button class="btn btn--primary">Primary</button>
+        <button class="btn btn--secondary">Secondary</button>
+        <button class="btn btn--danger">Danger</button>
+        <span class="badge badge--success">Success</span>
+        <span class="badge badge--warning">Warning</span>
+        <div class="card" style="width:180px;">
+          <div class="card__header">Card</div>
+          <div class="card__body">Token-driven</div>
+        </div>
+      </div>
+    </div>
+
+    <pre id="themeCode"><span class="kw">:root</span> {
+  <span class="prop">--bg</span>:     <span class="val">#0d0d1a</span>;
+  <span class="prop">--bg3</span>:    <span class="val">#1a1a2e</span>;
+  <span class="prop">--border</span>: <span class="val">#2a2a40</span>;
+  <span class="cmt">/* Change these tokens → all components update */</span>
+}</pre>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+// ─── Btn group toggle ─────────────────────────────────────
+document.querySelectorAll('.btn-group').forEach(group => {
+  group.addEventListener('click', e => {
+    const btn = e.target.closest('.btn');
+    if (!btn) return;
+    group.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ─── Alert dismiss ───────────────────────────────────────
+function setupAlertDismiss() {
+  document.querySelectorAll('.alert__close').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const alert = btn.closest('.alert');
+      alert.classList.add('alert--dismissed');
+    });
+  });
+}
+setupAlertDismiss();
+
+document.getElementById('restoreAlerts').addEventListener('click', () => {
+  document.querySelectorAll('.alert--dismissible').forEach(a => {
+    a.classList.remove('alert--dismissed');
+  });
+});
+
+// ─── Progress badge ───────────────────────────────────────
+const range = document.getElementById('progressRange');
+const pval  = document.getElementById('progressVal');
+const pb1   = document.getElementById('progressBadge');
+const pb2   = document.getElementById('progressBadge2');
+
+range.addEventListener('input', () => {
+  const v = range.value;
+  pval.textContent = v + '%';
+  pb1.style.setProperty('--progress', v);
+  pb2.style.setProperty('--progress', v);
+  pb1.textContent = v + '%';
+  pb2.textContent = v + '%';
+  // Fix: badge--progress replaces ::before, update badge text after
+  pb1.firstChild.textContent = v + '%';
+  pb2.firstChild.textContent = v + '%';
+});
+
+// Actually set the text node content
+function updateProgressBadgeText(badge, v) {
+  // The badge has ::before as progress circle, then text
+  badge.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = v + '%'; });
+}
+
+range.addEventListener('input', () => {
+  const v = range.value;
+  pval.textContent = v + '%';
+  [pb1, pb2].forEach(b => {
+    b.style.setProperty('--progress', v);
+    updateProgressBadgeText(b, v);
+  });
+});
+
+// ─── Token swatches ──────────────────────────────────────
+const TOKENS = [
+  { name: 'Primary', var: '--btn-primary', bg: '#2563eb', label: '#2563eb' },
+  { name: 'Danger',  var: '--btn-danger',  bg: '#dc2626', label: '#dc2626' },
+  { name: 'Surface 1', var: '--s1', bg: '#0d0d1a', label: '#0d0d1a' },
+  { name: 'Surface 3', var: '--s3', bg: '#1a1a2e', label: '#1a1a2e' },
+  { name: 'Accent',  var: '--accent', bg: '#a8d8ea', label: '#a8d8ea' },
+  { name: 'Border',  var: '--border', bg: '#2a2a40', label: '#2a2a40' },
+];
+
+const grid = document.getElementById('tokenGrid');
+TOKENS.forEach(t => {
+  const sw = document.createElement('div');
+  sw.className = 'token-swatch';
+  sw.innerHTML = `
+    <div class="token-color" style="background:${t.bg}"></div>
+    <div class="token-info">
+      <div class="token-name">${t.name}</div>
+      <div>${t.label}</div>
+    </div>
+  `;
+  grid.appendChild(sw);
+});
+
+// ─── Theme cycling ────────────────────────────────────────
+const THEMES = [
+  {
+    name: 'Dark (default)',
+    vars: { '--bg':'#0d0d1a','--bg2':'#111122','--bg3':'#1a1a2e','--bg4':'#16213e','--border':'#2a2a40','--text':'#c8c8d8','--text-dim':'#7878a0' }
+  },
+  {
+    name: 'Midnight Blue',
+    vars: { '--bg':'#050d1a','--bg2':'#081422','--bg3':'#0d1f38','--bg4':'#0a1929','--border':'#152a40','--text':'#c8d8e8','--text-dim':'#607090' }
+  },
+  {
+    name: 'Deep Forest',
+    vars: { '--bg':'#050d0a','--bg2':'#081410','--bg3':'#0d2018','--bg4':'#0a1a14','--border':'#153022','--text':'#c8e0d0','--text-dim':'#507060' }
+  },
+];
+
+let themeIdx = 0;
+
+function cycleTheme() {
+  themeIdx = (themeIdx + 1) % THEMES.length;
+  const theme = THEMES[themeIdx];
+  const root = document.documentElement;
+  Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  document.getElementById('themeLabel').textContent = 'Current: ' + theme.name;
+
+  const code = document.getElementById('themeCode');
+  const entries = Object.entries(theme.vars).slice(0,4)
+    .map(([k,v]) => `  <span class="prop">${k}</span>: <span class="val">${v}</span>;`).join('\n');
+  code.innerHTML = `<span class="kw">:root</span> {\n${entries}\n  <span class="cmt">/* Change these tokens → all components update */</span>\n}`;
+}
+</script>
+</body>
+</html>

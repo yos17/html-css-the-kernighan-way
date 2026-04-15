@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1 — Build Your Own Reset/Normalize</title>
+<style>
+/* ============================================================
+   PAGE CHROME — dark theme, monospace, consistent with book
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  background: #0d0d1a;
+  color: #c8c8d8;
+  line-height: 1.6;
+}
+
+body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+h1.page-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #a8d8ea;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #7080a0;
+  margin-bottom: 2rem;
+}
+
+/* Section layout */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #a8d8ea;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #2a2a3a;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.btn {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: #1a1a2e;
+  color: #c8c8d8;
+  border: 1px solid #3a3a5a;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.btn:hover {
+  background: #2a2a3e;
+  border-color: #a8d8ea;
+  color: #a8d8ea;
+}
+
+.btn.active {
+  background: #a8d8ea;
+  color: #0d0d1a;
+  border-color: #a8d8ea;
+  font-weight: bold;
+}
+
+/* Two-column comparison */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 700px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+.compare-panel {
+  background: #111122;
+  border: 1px solid #2a2a3a;
+  padding: 1.2rem;
+  min-height: 200px;
+}
+
+.compare-panel h3 {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #7080a0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #1f1f30;
+}
+
+/* Box model visualizer */
+.box-viz {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.box-container {
+  background: #111122;
+  border: 1px solid #2a2a3a;
+  padding: 1rem;
+  text-align: center;
+}
+
+.box-label {
+  font-size: 0.75rem;
+  color: #7080a0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.8rem;
+}
+
+.box-diagram {
+  position: relative;
+  display: inline-block;
+}
+
+/* Margin layer */
+.layer-margin {
+  background: rgba(100, 60, 20, 0.3);
+  border: 1px dashed #7a4a20;
+  padding: 14px;
+  position: relative;
+}
+
+/* Border layer */
+.layer-border {
+  background: rgba(60, 100, 20, 0.3);
+  border: 8px solid rgba(80, 140, 30, 0.6);
+  padding: 10px;
+}
+
+/* Padding layer */
+.layer-padding {
+  background: rgba(20, 60, 100, 0.4);
+  padding: 14px;
+}
+
+/* Content layer */
+.layer-content {
+  background: rgba(168, 216, 234, 0.15);
+  border: 1px solid #a8d8ea;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: #a8d8ea;
+  white-space: nowrap;
+}
+
+.box-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  font-size: 0.7rem;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #9090a8;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Specificity visualizer */
+.spec-row {
+  display: grid;
+  grid-template-columns: 220px 90px auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #1f1f30;
+  font-size: 0.8rem;
+}
+
+.spec-row:last-child { border-bottom: none; }
+
+.spec-selector { color: #c8c8d8; font-family: 'Courier New', monospace; }
+.spec-score {
+  display: flex;
+  gap: 4px;
+}
+
+.spec-digit {
+  width: 24px;
+  height: 24px;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.spec-digit.id    { border-color: #e06060; color: #e06060; background: rgba(224,96,96,0.1); }
+.spec-digit.cls   { border-color: #60a060; color: #60a060; background: rgba(96,160,96,0.1); }
+.spec-digit.typ   { border-color: #6090c0; color: #6090c0; background: rgba(96,144,192,0.1); }
+
+.spec-bar {
+  height: 16px;
+  background: #a8d8ea;
+  opacity: 0.6;
+  min-width: 2px;
+  transition: width 0.3s;
+}
+
+/* Inheritance demo */
+.inherit-tree {
+  font-size: 0.8rem;
+  line-height: 1.8;
+  background: #111122;
+  border: 1px solid #2a2a3a;
+  padding: 1rem;
+}
+
+.inherit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.inherit-indent { margin-left: 1.5rem; }
+.inherit-indent2 { margin-left: 3rem; }
+
+.inherit-tag {
+  color: #a8d8ea;
+  font-weight: bold;
+  min-width: 100px;
+}
+
+.inherit-prop {
+  color: #9090a8;
+  font-size: 0.75rem;
+}
+
+.badge {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-yes  { background: rgba(96,180,96,0.2); color: #60b060; border: 1px solid #60b060; }
+.badge-no   { background: rgba(180,80,80,0.2); color: #c06060; border: 1px solid #c06060; }
+.badge-ua   { background: rgba(200,160,80,0.2); color: #c8a050; border: 1px solid #c8a050; }
+
+/* Elements demo panel — the heart of the page */
+.demo-elements {
+  background: #111122;
+  border: 1px solid #2a2a3a;
+  padding: 1.5rem;
+}
+
+.demo-elements.no-reset {
+  /* Restore browser defaults via explicit declarations that mimic UA */
+}
+
+.demo-elements.no-reset h1,
+.demo-elements.no-reset h2,
+.demo-elements.no-reset h3 {
+  font-size: revert;
+  font-weight: revert;
+  margin: revert;
+}
+
+.demo-elements.no-reset ul,
+.demo-elements.no-reset ol {
+  list-style: revert;
+  padding: revert;
+  margin: revert;
+}
+
+.demo-elements.no-reset a {
+  color: revert;
+  text-decoration: revert;
+}
+
+.demo-elements.no-reset button {
+  font: revert;
+  background: revert;
+  border: revert;
+  padding: revert;
+  cursor: revert;
+}
+
+.demo-elements.no-reset input,
+.demo-elements.no-reset textarea,
+.demo-elements.no-reset select {
+  font: revert;
+  background: revert;
+  border: revert;
+  padding: revert;
+}
+
+/* Base styling ONLY applied when reset is on, so you can see our choices */
+.demo-elements.with-reset h1 { font-size: 1.6rem; font-weight: bold; color: #a8d8ea; margin-bottom: 0.5rem; }
+.demo-elements.with-reset h2 { font-size: 1.2rem; font-weight: bold; color: #c8c8d8; margin-bottom: 0.4rem; }
+.demo-elements.with-reset h3 { font-size: 1rem; font-weight: bold; color: #b8b8c8; margin-bottom: 0.3rem; }
+.demo-elements.with-reset p  { margin-bottom: 0.75rem; }
+.demo-elements.with-reset ul { margin-bottom: 0.75rem; padding-left: 1rem; }
+.demo-elements.with-reset li { padding: 0.1rem 0; }
+.demo-elements.with-reset li::before { content: "– "; color: #a8d8ea; }
+.demo-elements.with-reset a { color: #a8d8ea; text-decoration: underline; }
+.demo-elements.with-reset button {
+  background: #1a2a3a;
+  color: #a8d8ea;
+  border: 1px solid #a8d8ea;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
+.demo-elements.with-reset input,
+.demo-elements.with-reset textarea,
+.demo-elements.with-reset select {
+  background: #0d0d1a;
+  color: #c8c8d8;
+  border: 1px solid #3a3a5a;
+  padding: 0.3rem 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
+
+.demo-spacer { margin-top: 0.75rem; }
+
+/* Code display */
+.code-block {
+  background: #0a0a18;
+  border: 1px solid #2a2a3a;
+  border-left: 3px solid #a8d8ea;
+  padding: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  color: #c8c8d8;
+  white-space: pre;
+}
+
+.code-keyword { color: #a8d8ea; }
+.code-selector { color: #e0a0c0; }
+.code-value { color: #a0d0a0; }
+.code-comment { color: #5a5a7a; font-style: italic; }
+
+/* Status bar */
+.status-bar {
+  background: #111122;
+  border: 1px solid #2a2a3a;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: #7080a0;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a8d8ea;
+  flex-shrink: 0;
+}
+
+.status-indicator.off { background: #c05050; }
+
+/* Info boxes */
+.info-box {
+  background: rgba(168, 216, 234, 0.05);
+  border: 1px solid #2a4a5a;
+  border-left: 3px solid #a8d8ea;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  color: #a0b0c0;
+}
+
+/* Tab system for box-sizing demo */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #2a2a3a;
+}
+
+.tab {
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  background: none;
+  color: #7080a0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  position: relative;
+  bottom: -1px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.tab:hover { color: #c8c8d8; }
+
+.tab.active {
+  color: #a8d8ea;
+  background: #111122;
+  border-color: #2a2a3a;
+  border-bottom-color: #111122;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Sizing demo boxes */
+.sizing-demo {
+  padding: 1rem;
+  background: #0a0a18;
+}
+
+.box-A, .box-B {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  overflow: visible;
+}
+
+.size-label {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  color: #7080a0;
+  white-space: nowrap;
+}
+
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Chapter 1 — Build Your Own Reset/Normalize</h1>
+<p class="subtitle">HTML &amp; CSS: The Kernighan Way &nbsp;·&nbsp; micro-reset.css</p>
+
+<!-- ============================================================
+     SECTION 1: LIVE TOGGLE DEMO
+     ============================================================ -->
+<div class="section">
+  <div class="section-title">Live Demo — Reset Toggle</div>
+
+  <div class="controls">
+    <button class="btn active" id="btn-reset-on" onclick="setReset(true)">WITH reset</button>
+    <button class="btn" id="btn-reset-off" onclick="setReset(false)">WITHOUT reset (browser defaults)</button>
+    <span style="font-size:0.75rem; color:#5a6a7a; margin-left:0.5rem;">Toggle to see the difference</span>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-indicator" id="reset-status-dot"></div>
+    <span id="reset-status-text">micro-reset.css applied — elements styled by your rules only</span>
+  </div>
+
+  <div class="demo-elements with-reset" id="demo-panel">
+    <h1>Heading Level 1</h1>
+    <h2>Heading Level 2</h2>
+    <h3>Heading Level 3</h3>
+
+    <p class="demo-spacer">A paragraph of body text. Notice that headings above have no extra margin fighting with the page. Their font-size and font-weight come from the reset + explicit rules above, not from browser defaults.</p>
+
+    <ul>
+      <li>List item one — no browser bullets</li>
+      <li>List item two — no left padding from browser</li>
+      <li>List item three — spacing by your choice</li>
+    </ul>
+
+    <p>A <a href="#">link in text</a> — color and decoration set explicitly, not by browser blue/underline default.</p>
+
+    <div class="demo-spacer">
+      <button>Button element</button>
+      <button>Another button</button>
+    </div>
+
+    <div class="demo-spacer">
+      <input type="text" placeholder="Text input" style="width:180px">
+      <select>
+        <option>Select element</option>
+        <option>Option two</option>
+      </select>
+    </div>
+
+    <div class="demo-spacer">
+      <textarea rows="2" placeholder="Textarea..." style="width:100%; margin-top:0.5rem"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 2: BOX MODEL VISUALIZER
+     ============================================================ -->
+<div class="section">
+  <div class="section-title">Box Model — content-box vs border-box</div>
+
+  <div class="info-box">
+    Both boxes below are declared with <code>width: 200px; padding: 20px; border: 8px solid</code>.
+    Watch what happens to the rendered width.
+  </div>
+
+  <div class="box-viz">
+    <div class="box-container">
+      <div class="box-label">content-box (default — broken)</div>
+      <div class="box-diagram">
+        <div class="layer-margin">
+          <div class="layer-border" style="border-color: rgba(80,140,30,0.6); border-width: 8px;">
+            <div class="layer-padding">
+              <div class="layer-content" style="width:164px;">
+                content: 200px
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="box-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(100,60,20,0.5);border:1px dashed #7a4a20;"></div>margin</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(80,140,30,0.5);"></div>border 8px</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(20,60,100,0.5);"></div>padding 20px</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(168,216,234,0.2);border:1px solid #a8d8ea;"></div>content</div>
+      </div>
+      <div style="font-size:0.75rem; color:#c05050; margin-top:0.75rem; text-align:center;">
+        Rendered: 200 + 40 + 16 = <strong style="color:#e06060;">256px</strong><br>
+        <span style="color:#5a6a7a;">width ≠ what you declared</span>
+      </div>
+    </div>
+
+    <div class="box-container">
+      <div class="box-label">border-box (use always)</div>
+      <div class="box-diagram">
+        <div class="layer-margin">
+          <div class="layer-border" style="border-color: rgba(168,216,234,0.5); border-width: 8px;">
+            <div class="layer-padding" style="background:rgba(20,80,120,0.4);">
+              <div class="layer-content" style="width:100px; border-color:#a8d8ea;">
+                content: 124px
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="box-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(100,60,20,0.5);border:1px dashed #7a4a20;"></div>margin</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(168,216,234,0.3);"></div>border 8px</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(20,80,120,0.5);"></div>padding 20px</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(168,216,234,0.2);border:1px solid #a8d8ea;"></div>content</div>
+      </div>
+      <div style="font-size:0.75rem; color:#60c060; margin-top:0.75rem; text-align:center;">
+        Rendered: <strong style="color:#a8d8ea;">200px</strong> exactly<br>
+        <span style="color:#5a6a7a;">width = what you declared</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive box-sizing tabs -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('content-box', this)">content-box math</button>
+    <button class="tab" onclick="switchTab('border-box', this)">border-box math</button>
+    <button class="tab" onclick="switchTab('why', this)">why this matters</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-content-box">
+    <div class="code-block"><span class="code-comment">/* content-box: padding and border ADD to the width */</span>
+<span class="code-selector">.box</span> {
+  <span class="code-keyword">box-sizing</span>: <span class="code-value">content-box</span>; <span class="code-comment">/* browser default */</span>
+  <span class="code-keyword">width</span>:       <span class="code-value">200px</span>;   <span class="code-comment">/* only the content box */</span>
+  <span class="code-keyword">padding</span>:     <span class="code-value">20px</span>;    <span class="code-comment">/* 20px × 2 sides = 40px extra */</span>
+  <span class="code-keyword">border</span>:      <span class="code-value">8px solid</span>; <span class="code-comment">/* 8px × 2 sides = 16px extra */</span>
+}
+
+<span class="code-comment">/* Rendered width: 200 + 20 + 20 + 8 + 8 = 256px */</span>
+<span class="code-comment">/* Two of these side-by-side in a 500px container: */</span>
+<span class="code-comment">/* 256 + 256 = 512px — overflows by 12px! */</span></div>
+  </div>
+
+  <div class="tab-panel" id="tab-border-box">
+    <div class="code-block"><span class="code-comment">/* border-box: padding and border are INCLUDED in the width */</span>
+<span class="code-selector">.box</span> {
+  <span class="code-keyword">box-sizing</span>: <span class="code-value">border-box</span>;
+  <span class="code-keyword">width</span>:       <span class="code-value">200px</span>;   <span class="code-comment">/* content + padding + border = 200px */</span>
+  <span class="code-keyword">padding</span>:     <span class="code-value">20px</span>;    <span class="code-comment">/* uses 20px × 2 = 40px from the 200px */</span>
+  <span class="code-keyword">border</span>:      <span class="code-value">8px solid</span>; <span class="code-comment">/* uses 8px × 2 = 16px from the 200px */</span>
+}
+
+<span class="code-comment">/* Content area: 200 - 40 - 16 = 144px */</span>
+<span class="code-comment">/* Rendered width: 200px (always) */</span>
+<span class="code-comment">/* Two 50%-wide boxes always fit side by side */</span></div>
+  </div>
+
+  <div class="tab-panel" id="tab-why">
+    <div class="code-block"><span class="code-comment">/* Classic layout bug with content-box: */</span>
+<span class="code-selector">.sidebar</span>  { <span class="code-keyword">width</span>: <span class="code-value">25%</span>; <span class="code-keyword">padding</span>: <span class="code-value">20px</span>; } <span class="code-comment">/* renders at 25% + 40px */</span>
+<span class="code-selector">.main</span>     { <span class="code-keyword">width</span>: <span class="code-value">75%</span>; <span class="code-keyword">padding</span>: <span class="code-value">20px</span>; } <span class="code-comment">/* renders at 75% + 40px */</span>
+<span class="code-comment">/* Total: 100% + 80px — wraps to next line! */</span>
+
+<span class="code-comment">/* The fix (v1 of micro-reset.css): */</span>
+<span class="code-selector">*</span>, <span class="code-selector">*::before</span>, <span class="code-selector">*::after</span> {
+  <span class="code-keyword">box-sizing</span>: <span class="code-value">border-box</span>;
+}
+
+<span class="code-comment">/* Now: sidebar is exactly 25%, main is exactly 75% */</span>
+<span class="code-comment">/* They fit. Every time. */</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 3: SPECIFICITY VISUALIZER
+     ============================================================ -->
+<div class="section">
+  <div class="section-title">Specificity — How Rules Win</div>
+
+  <div class="info-box">
+    Every CSS selector has a specificity score: (IDs, Classes, Types). Higher wins. When equal, the later rule wins.
+    The universal selector <code>*</code> scores (0,0,0) — the reset always loses to your rules.
+  </div>
+
+  <div style="font-size:0.7rem; color:#5a6a7a; margin-bottom:0.5rem; display:grid; grid-template-columns:220px 90px auto; gap:0.75rem;">
+    <span>Selector</span>
+    <span style="display:flex;gap:4px;">
+      <span style="width:24px;text-align:center;color:#e06060;">ID</span>
+      <span style="width:24px;text-align:center;color:#60a060;">CLS</span>
+      <span style="width:24px;text-align:center;color:#6090c0;">TYP</span>
+    </span>
+    <span>Relative weight</span>
+  </div>
+
+  <div id="spec-table"></div>
+</div>
+
+<!-- ============================================================
+     SECTION 4: INHERITANCE TREE
+     ============================================================ -->
+<div class="section">
+  <div class="section-title">Inheritance — What Flows Down the DOM</div>
+
+  <div class="info-box">
+    Typography properties inherit. Layout properties do not. Form elements block font inheritance — that's why <code>font: inherit</code> is essential in every reset.
+  </div>
+
+  <div class="inherit-tree">
+    <div class="inherit-row">
+      <span class="inherit-tag">body</span>
+      <span class="inherit-prop">font-family: 'Courier New'</span>
+      <span class="badge badge-yes">declared</span>
+    </div>
+    <div class="inherit-row inherit-indent">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag">p</span>
+      <span class="inherit-prop">font-family: 'Courier New'</span>
+      <span class="badge badge-yes">inherited ✓</span>
+    </div>
+    <div class="inherit-row inherit-indent">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag">a</span>
+      <span class="inherit-prop">font-family: 'Courier New'</span>
+      <span class="badge badge-yes">inherited ✓</span>
+    </div>
+    <div class="inherit-row inherit-indent">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag">button</span>
+      <span class="inherit-prop">font-family: system-ui</span>
+      <span class="badge badge-ua">UA override ✗</span>
+    </div>
+    <div class="inherit-row inherit-indent2">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag" style="color:#60b060;">button + reset</span>
+      <span class="inherit-prop">font-family: 'Courier New'</span>
+      <span class="badge badge-yes">font: inherit ✓</span>
+    </div>
+    <div class="inherit-row inherit-indent">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag">input</span>
+      <span class="inherit-prop">font-family: system-ui</span>
+      <span class="badge badge-ua">UA override ✗</span>
+    </div>
+    <div class="inherit-row inherit-indent2">
+      <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+      <span class="inherit-tag" style="color:#60b060;">input + reset</span>
+      <span class="inherit-prop">font-family: 'Courier New'</span>
+      <span class="badge badge-yes">font: inherit ✓</span>
+    </div>
+    <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #1f1f30;">
+      <div class="inherit-row">
+        <span class="inherit-tag">body</span>
+        <span class="inherit-prop">background-color: #0d0d1a</span>
+        <span class="badge badge-yes">declared</span>
+      </div>
+      <div class="inherit-row inherit-indent">
+        <span style="color:#3a3a5a; margin-right:0.25rem;">└─</span>
+        <span class="inherit-tag">p</span>
+        <span class="inherit-prop">background-color: transparent</span>
+        <span class="badge badge-no">NOT inherited ✗</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 5: THE COMPLETE RESET
+     ============================================================ -->
+<div class="section">
+  <div class="section-title">micro-reset.css — Complete Listing</div>
+
+  <div class="controls">
+    <button class="btn active" id="view-v1" onclick="showVersion('v1', this)">v1 — box model</button>
+    <button class="btn" id="view-v2" onclick="showVersion('v2', this)">v2 — elements</button>
+    <button class="btn" id="view-v3" onclick="showVersion('v3', this)">v3 — complete</button>
+  </div>
+
+  <div id="code-v1" class="code-block"><span class="code-comment">/* v1: The one rule that matters */</span>
+
+<span class="code-selector">*</span>,
+<span class="code-selector">*::before</span>,
+<span class="code-selector">*::after</span> {
+  <span class="code-keyword">box-sizing</span>: <span class="code-value">border-box</span>;  <span class="code-comment">/* padding+border included in width */</span>
+  <span class="code-keyword">margin</span>:     <span class="code-value">0</span>;            <span class="code-comment">/* no browser margin surprises */</span>
+  <span class="code-keyword">padding</span>:    <span class="code-value">0</span>;            <span class="code-comment">/* no browser padding surprises */</span>
+}
+
+<span class="code-comment">/* 3 rules. Fixes the most common layout bugs. */</span>
+<span class="code-comment">/* Cost: all elements now have no spacing — add it back deliberately. */</span></div>
+
+  <div id="code-v2" class="code-block" style="display:none"><span class="code-comment">/* v2: Element-specific resets */</span>
+
+<span class="code-selector">*</span>, <span class="code-selector">*::before</span>, <span class="code-selector">*::after</span> { <span class="code-keyword">box-sizing</span>: <span class="code-value">border-box</span>; <span class="code-keyword">margin</span>: <span class="code-value">0</span>; <span class="code-keyword">padding</span>: <span class="code-value">0</span>; }
+
+<span class="code-comment">/* Headings — remove browser font-size/weight decisions */</span>
+<span class="code-selector">h1, h2, h3, h4, h5, h6</span> {
+  <span class="code-keyword">font-size</span>:   <span class="code-value">inherit</span>;
+  <span class="code-keyword">font-weight</span>: <span class="code-value">inherit</span>;
+}
+
+<span class="code-comment">/* Lists — remove bullets and indent */</span>
+<span class="code-selector">ul, ol</span> { <span class="code-keyword">list-style</span>: <span class="code-value">none</span>; }
+
+<span class="code-comment">/* Links — remove blue color and underline */</span>
+<span class="code-selector">a</span> { <span class="code-keyword">color</span>: <span class="code-value">inherit</span>; <span class="code-keyword">text-decoration</span>: <span class="code-value">inherit</span>; }
+
+<span class="code-comment">/* Media — block display removes 4px descender gap */</span>
+<span class="code-selector">img, video, canvas, svg</span> { <span class="code-keyword">display</span>: <span class="code-value">block</span>; <span class="code-keyword">max-width</span>: <span class="code-value">100%</span>; }
+
+<span class="code-comment">/* Forms — font: inherit is critical. Browsers block font inheritance here. */</span>
+<span class="code-selector">button, input, select, textarea</span> {
+  <span class="code-keyword">font</span>:       <span class="code-value">inherit</span>;    <span class="code-comment">/* forces UA-blocked inheritance */</span>
+  <span class="code-keyword">color</span>:      <span class="code-value">inherit</span>;
+  <span class="code-keyword">background</span>: <span class="code-value">none</span>;
+  <span class="code-keyword">border</span>:     <span class="code-value">none</span>;
+}</div>
+
+  <div id="code-v3" class="code-block" style="display:none"><span class="code-comment">/* v3: micro-reset.css — production-ready, ~40 lines */</span>
+
+<span class="code-selector">*</span>, <span class="code-selector">*::before</span>, <span class="code-selector">*::after</span> { <span class="code-keyword">box-sizing</span>: <span class="code-value">border-box</span>; <span class="code-keyword">margin</span>: <span class="code-value">0</span>; <span class="code-keyword">padding</span>: <span class="code-value">0</span>; }
+
+<span class="code-selector">html</span> {
+  <span class="code-keyword">-webkit-text-size-adjust</span>: <span class="code-value">100%</span>; <span class="code-comment">/* prevent iOS font inflation on rotate */</span>
+  <span class="code-keyword">tab-size</span>:                 <span class="code-value">4</span>;
+  <span class="code-keyword">scroll-behavior</span>:          <span class="code-value">smooth</span>;
+}
+
+<span class="code-selector">body</span> {
+  <span class="code-keyword">min-height</span>:             <span class="code-value">100vh</span>;
+  <span class="code-keyword">line-height</span>:            <span class="code-value">1.5</span>;
+  <span class="code-keyword">-webkit-font-smoothing</span>: <span class="code-value">antialiased</span>;
+  <span class="code-keyword">text-rendering</span>:         <span class="code-value">optimizeLegibility</span>;
+}
+
+<span class="code-selector">h1, h2, h3, h4, h5, h6</span> { <span class="code-keyword">font-size</span>: <span class="code-value">inherit</span>; <span class="code-keyword">font-weight</span>: <span class="code-value">inherit</span>; }
+<span class="code-selector">p, h1, h2, h3, h4, h5, h6</span> { <span class="code-keyword">overflow-wrap</span>: <span class="code-value">break-word</span>; }
+<span class="code-selector">ul, ol</span> { <span class="code-keyword">list-style</span>: <span class="code-value">none</span>; }
+<span class="code-selector">a</span> { <span class="code-keyword">color</span>: <span class="code-value">inherit</span>; <span class="code-keyword">text-decoration</span>: <span class="code-value">inherit</span>; }
+<span class="code-selector">img, picture, video, canvas, svg</span> { <span class="code-keyword">display</span>: <span class="code-value">block</span>; <span class="code-keyword">max-width</span>: <span class="code-value">100%</span>; }
+<span class="code-selector">img, video</span> { <span class="code-keyword">height</span>: <span class="code-value">auto</span>; }
+
+<span class="code-selector">button, input, select, textarea, optgroup</span> {
+  <span class="code-keyword">font</span>: <span class="code-value">inherit</span>; <span class="code-keyword">color</span>: <span class="code-value">inherit</span>; <span class="code-keyword">background</span>: <span class="code-value">none</span>; <span class="code-keyword">border</span>: <span class="code-value">none</span>; <span class="code-keyword">padding</span>: <span class="code-value">0</span>;
+}
+
+<span class="code-selector">button</span>, <span class="code-selector">[type="button"]</span>, <span class="code-selector">[type="reset"]</span>, <span class="code-selector">[type="submit"]</span> {
+  <span class="code-keyword">cursor</span>:             <span class="code-value">pointer</span>;
+  <span class="code-keyword">-webkit-appearance</span>: <span class="code-value">button</span>;
+}
+
+<span class="code-selector">button:disabled</span>        { <span class="code-keyword">cursor</span>: <span class="code-value">default</span>; }
+<span class="code-selector">textarea</span>               { <span class="code-keyword">resize</span>: <span class="code-value">vertical</span>; }
+<span class="code-selector">input[type="search"]</span>   { <span class="code-keyword">-webkit-appearance</span>: <span class="code-value">none</span>; <span class="code-keyword">outline-offset</span>: <span class="code-value">-2px</span>; }
+<span class="code-selector">table</span>                  { <span class="code-keyword">border-collapse</span>: <span class="code-value">collapse</span>; <span class="code-keyword">border-spacing</span>: <span class="code-value">0</span>; }
+<span class="code-selector">summary</span>                { <span class="code-keyword">cursor</span>: <span class="code-value">pointer</span>; }
+<span class="code-selector">[hidden]</span>               { <span class="code-keyword">display</span>: <span class="code-value">none !important</span>; }
+
+<span class="code-selector">:focus-visible</span> {
+  <span class="code-keyword">outline</span>:        <span class="code-value">2px solid currentColor</span>;
+  <span class="code-keyword">outline-offset</span>: <span class="code-value">2px</span>;
+}</div>
+</div>
+
+<script>
+// ============================================================
+// Reset toggle
+// ============================================================
+function setReset(on) {
+  const panel = document.getElementById('demo-panel');
+  const dot   = document.getElementById('reset-status-dot');
+  const text  = document.getElementById('reset-status-text');
+  const btnOn  = document.getElementById('btn-reset-on');
+  const btnOff = document.getElementById('btn-reset-off');
+
+  if (on) {
+    panel.className = 'demo-elements with-reset';
+    dot.className = 'status-indicator';
+    text.textContent = 'micro-reset.css applied — elements styled by your rules only';
+    btnOn.classList.add('active');
+    btnOff.classList.remove('active');
+  } else {
+    panel.className = 'demo-elements no-reset';
+    dot.className = 'status-indicator off';
+    text.textContent = 'Browser defaults active — headings, lists, links, forms unstyled';
+    btnOff.classList.add('active');
+    btnOn.classList.remove('active');
+  }
+}
+
+// ============================================================
+// Tab system
+// ============================================================
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ============================================================
+// Version switcher
+// ============================================================
+function showVersion(v, btn) {
+  ['v1','v2','v3'].forEach(ver => {
+    document.getElementById('code-' + ver).style.display = ver === v ? 'block' : 'none';
+    document.getElementById('view-' + ver).classList.toggle('active', ver === v);
+  });
+}
+
+// ============================================================
+// Specificity table
+// ============================================================
+const selectors = [
+  { sel: '*',                     ids: 0, cls: 0, typ: 0 },
+  { sel: 'a',                     ids: 0, cls: 0, typ: 1 },
+  { sel: 'h1',                    ids: 0, cls: 0, typ: 1 },
+  { sel: '.nav-link',             ids: 0, cls: 1, typ: 0 },
+  { sel: '[type="text"]',         ids: 0, cls: 1, typ: 0 },
+  { sel: ':hover',                ids: 0, cls: 1, typ: 0 },
+  { sel: 'a:hover',               ids: 0, cls: 1, typ: 1 },
+  { sel: '.nav a',                ids: 0, cls: 1, typ: 1 },
+  { sel: '.nav a:hover',          ids: 0, cls: 2, typ: 1 },
+  { sel: '#header',               ids: 1, cls: 0, typ: 0 },
+  { sel: '#header .nav a',        ids: 1, cls: 1, typ: 1 },
+  { sel: '#header .nav a:hover',  ids: 1, cls: 2, typ: 1 },
+];
+
+const maxScore = selectors.reduce((m, s) => Math.max(m, s.ids * 100 + s.cls * 10 + s.typ), 0);
+
+const tableEl = document.getElementById('spec-table');
+selectors.forEach(s => {
+  const score = s.ids * 100 + s.cls * 10 + s.typ;
+  const barW  = Math.max(2, Math.round((score / maxScore) * 300));
+
+  const row = document.createElement('div');
+  row.className = 'spec-row';
+  row.innerHTML = `
+    <span class="spec-selector">${escapeHtml(s.sel)}</span>
+    <span class="spec-score">
+      <span class="spec-digit id">${s.ids}</span>
+      <span class="spec-digit cls">${s.cls}</span>
+      <span class="spec-digit typ">${s.typ}</span>
+    </span>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <div class="spec-bar" style="width:${barW}px;"></div>
+      <span style="font-size:0.7rem;color:#5a6a7a;">${score === 0 ? '0 — always loses' : score}</span>
+    </div>
+  `;
+  tableEl.appendChild(row);
+});
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

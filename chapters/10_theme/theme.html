@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 10 — Theme System | HTML & CSS: The Kernighan Way</title>
+<script>
+// Restore theme before render to prevent FOUC
+(function() {
+  const stored = localStorage.getItem('kw-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+})();
+</script>
+<style>
+/* ─── @property declarations ─── */
+@property --gradient-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 135deg;
+}
+@property --hue {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 221;
+}
+
+/* ─── Primitive tokens ─── */
+:root {
+  --blue-50:  hsl(214 100% 97%);
+  --blue-100: hsl(214 95% 93%);
+  --blue-200: hsl(213 97% 87%);
+  --blue-300: hsl(212 96% 78%);
+  --blue-400: hsl(213 94% 68%);
+  --blue-500: hsl(217 91% 60%);
+  --blue-600: hsl(221 83% 53%);
+  --blue-700: hsl(224 76% 48%);
+  --blue-800: hsl(226 71% 40%);
+  --blue-900: hsl(224 64% 33%);
+
+  --gray-50:  hsl(210 40% 98%);
+  --gray-100: hsl(210 40% 96%);
+  --gray-200: hsl(214 32% 91%);
+  --gray-300: hsl(213 27% 84%);
+  --gray-400: hsl(215 20% 65%);
+  --gray-500: hsl(215 16% 47%);
+  --gray-600: hsl(215 19% 35%);
+  --gray-700: hsl(215 25% 27%);
+  --gray-800: hsl(217 33% 17%);
+  --gray-900: hsl(222 47% 11%);
+
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px; --space-6: 24px;  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-sm: 3px; --radius-md: 6px; --radius-lg: 12px; --radius-full: 9999px;
+
+  --font-size-xs: 0.72rem; --font-size-sm: 0.85rem;
+  --font-size-md: 1rem;    --font-size-lg: 1.125rem;
+}
+
+/* ─── Light theme (default) ─── */
+:root,
+[data-theme="light"] {
+  --color-primary:        var(--blue-600);
+  --color-primary-hover:  var(--blue-700);
+  --color-primary-active: var(--blue-800);
+  --color-on-primary:     var(--gray-50);
+
+  --color-surface:        var(--gray-50);
+  --color-surface-raised: white;
+  --color-surface-sunken: var(--gray-100);
+  --color-text:           var(--gray-900);
+  --color-text-muted:     var(--gray-500);
+  --color-text-disabled:  var(--gray-400);
+  --color-border:         var(--gray-200);
+  --color-border-strong:  var(--gray-400);
+  --color-focus-ring:     var(--blue-400);
+
+  --color-success: hsl(142 71% 38%);
+  --color-warning: hsl(38 92% 45%);
+  --color-error:   hsl(0 84% 55%);
+}
+
+/* ─── Dark theme ─── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-primary:        var(--blue-400);
+    --color-primary-hover:  var(--blue-300);
+    --color-primary-active: var(--blue-200);
+    --color-on-primary:     var(--gray-900);
+    --color-surface:        hsl(222 47% 8%);
+    --color-surface-raised: var(--gray-900);
+    --color-surface-sunken: hsl(222 47% 6%);
+    --color-text:           var(--gray-100);
+    --color-text-muted:     var(--gray-400);
+    --color-text-disabled:  var(--gray-600);
+    --color-border:         var(--gray-700);
+    --color-border-strong:  var(--gray-500);
+    --color-success: hsl(142 60% 45%);
+    --color-warning: hsl(38 85% 55%);
+    --color-error:   hsl(0 75% 60%);
+  }
+}
+
+[data-theme="dark"] {
+  --color-primary:        var(--blue-400);
+  --color-primary-hover:  var(--blue-300);
+  --color-primary-active: var(--blue-200);
+  --color-on-primary:     var(--gray-900);
+  --color-surface:        hsl(222 47% 8%);
+  --color-surface-raised: var(--gray-900);
+  --color-surface-sunken: hsl(222 47% 6%);
+  --color-text:           var(--gray-100);
+  --color-text-muted:     var(--gray-400);
+  --color-text-disabled:  var(--gray-600);
+  --color-border:         var(--gray-700);
+  --color-border-strong:  var(--gray-500);
+  --color-success: hsl(142 60% 45%);
+  --color-warning: hsl(38 85% 55%);
+  --color-error:   hsl(0 75% 60%);
+}
+
+/* ─── High contrast theme ─── */
+[data-theme="high-contrast"] {
+  --color-primary:        hsl(213 100% 65%);
+  --color-primary-hover:  hsl(213 100% 75%);
+  --color-on-primary:     black;
+  --color-surface:        black;
+  --color-surface-raised: hsl(0 0% 7%);
+  --color-surface-sunken: hsl(0 0% 4%);
+  --color-text:           white;
+  --color-text-muted:     hsl(0 0% 78%);
+  --color-text-disabled:  hsl(0 0% 50%);
+  --color-border:         hsl(0 0% 45%);
+  --color-border-strong:  white;
+  --color-focus-ring:     hsl(60 100% 60%);
+  --color-success: hsl(120 100% 50%);
+  --color-warning: hsl(60 100% 55%);
+  --color-error:   hsl(0 100% 60%);
+}
+
+/* ─── Custom theme (runtime hue) ─── */
+[data-theme="custom"] {
+  --color-primary:        hsl(var(--hue) 70% 52%);
+  --color-primary-hover:  hsl(var(--hue) 70% 44%);
+  --color-primary-active: hsl(var(--hue) 70% 36%);
+  --color-on-primary:     white;
+  --color-surface:        hsl(var(--hue) 20% 97%);
+  --color-surface-raised: white;
+  --color-surface-sunken: hsl(var(--hue) 15% 93%);
+  --color-text:           hsl(var(--hue) 30% 15%);
+  --color-text-muted:     hsl(var(--hue) 15% 45%);
+  --color-text-disabled:  hsl(var(--hue) 10% 65%);
+  --color-border:         hsl(var(--hue) 20% 85%);
+  --color-border-strong:  hsl(var(--hue) 20% 65%);
+  --color-focus-ring:     hsl(var(--hue) 80% 60%);
+  --color-success: hsl(142 60% 40%);
+  --color-warning: hsl(38 85% 45%);
+  --color-error:   hsl(0 75% 55%);
+}
+
+/* ─── Base reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background 250ms ease, color 250ms ease;
+}
+
+body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+}
+
+/* ─── Typography ─── */
+h1 { color: var(--color-primary); font-size: 22px; margin-bottom: 4px; }
+h2 { color: var(--color-primary); font-size: 15px; margin: 32px 0 14px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px; }
+h3 { color: var(--color-text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
+p  { color: var(--color-text-muted); font-size: 13px; margin-bottom: 12px; }
+code { color: var(--color-primary); font-family: 'Courier New', monospace; font-size: 12px; }
+
+/* ─── Layout ─── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+.card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: background 250ms ease, border-color 250ms ease;
+}
+
+.panel {
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  transition: background 250ms ease, border-color 250ms ease;
+}
+
+/* ─── Components ─── */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  background: var(--color-primary); color: var(--color-on-primary);
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  text-decoration: none;
+}
+.btn:hover    { background: var(--color-primary-hover); }
+.btn:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.btn.ghost {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.btn.ghost:hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn.subtle {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.btn.subtle:hover { border-color: var(--color-border-strong); }
+
+.btn.sm { padding: 3px 10px; font-size: 11px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: var(--radius-full);
+  font-size: var(--font-size-xs); font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+.badge.success { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent); }
+.badge.warning { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent); }
+.badge.error   { background: color-mix(in srgb, var(--color-error)   15%, transparent); color: var(--color-error);   border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent); }
+
+.input {
+  width: 100%; padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken); color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font-family: 'Courier New', monospace; font-size: 12px; outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 250ms ease;
+}
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 30%, transparent);
+}
+.input::placeholder { color: var(--color-text-disabled); }
+
+/* ─── Theme switcher bar ─── */
+.theme-bar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  transition: background 250ms ease;
+}
+
+.theme-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  transition: all 150ms ease;
+}
+.theme-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.theme-btn.active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+/* ─── Token hierarchy diagram ─── */
+.token-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 0;
+  align-items: start;
+}
+.token-column {
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.token-col-header {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.token-list { padding: 10px 12px; font-size: 11px; }
+.token-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px;
+}
+.token-item:last-child { border-bottom: none; }
+.token-name { color: var(--color-primary); font-size: 11px; }
+.token-val  { color: var(--color-text-muted); font-size: 10px; }
+.token-arrow {
+  font-size: 20px; color: var(--color-text-disabled);
+  display: flex; align-items: center; padding: 0 8px; margin-top: 32px;
+}
+.color-swatch {
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+/* ─── Color palette display ─── */
+.palette-row {
+  display: flex; gap: 3px; margin-bottom: 8px;
+}
+.palette-chip {
+  flex: 1; height: 36px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 100ms ease;
+  position: relative;
+}
+.palette-chip:hover { transform: scaleY(1.15); z-index: 1; }
+.palette-chip-label {
+  position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; color: var(--color-text-disabled); white-space: nowrap;
+}
+
+/* ─── Component showcase ─── */
+.component-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+
+/* ─── Runtime customizer ─── */
+.customizer {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+.hue-display {
+  width: 100%; height: 24px; border-radius: var(--radius-md);
+  background: linear-gradient(to right, hsl(0 70% 55%), hsl(60 70% 55%), hsl(120 70% 45%), hsl(180 70% 45%), hsl(240 70% 55%), hsl(300 70% 55%), hsl(360 70% 55%));
+  margin-bottom: 8px; border: 1px solid var(--color-border);
+}
+.hue-slider {
+  width: 100%; margin-bottom: 8px; accent-color: var(--color-primary); cursor: pointer;
+}
+.sat-slider  { width: 100%; margin-bottom: 8px; accent-color: var(--color-primary); cursor: pointer; }
+
+/* ─── Token inspector ─── */
+.inspector-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.inspector-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  transition: background 200ms;
+}
+.inspector-item:hover { background: var(--color-surface-raised); }
+.inspector-name  { color: var(--color-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspector-value { color: var(--color-text-muted); font-size: 10px; }
+
+/* ─── Animated gradient ─── */
+.gradient-card {
+  background: linear-gradient(var(--gradient-angle), var(--color-primary), color-mix(in srgb, var(--color-primary) 50%, purple));
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  text-align: center;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: --gradient-angle 600ms ease;
+}
+.gradient-card:hover { --gradient-angle: 315deg; }
+.gradient-card.spinning { animation: gradientSpin 3s linear infinite; }
+@keyframes gradientSpin { from { --gradient-angle: 0deg; } to { --gradient-angle: 360deg; } }
+
+/* ─── Misc ─── */
+hr { border: none; border-top: 1px solid var(--color-border); margin: 24px 0; }
+.subtitle { color: var(--color-text-muted); font-size: 13px; margin-bottom: 28px; }
+.label { font-size: 11px; color: var(--color-text-muted); margin-bottom: 4px; }
+select {
+  background: var(--color-surface-sunken); border: 1px solid var(--color-border);
+  color: var(--color-text); border-radius: var(--radius-md); padding: 4px 8px;
+  font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer; outline: none;
+}
+select:focus { border-color: var(--color-primary); }
+</style>
+</head>
+<body>
+
+<h1>Chapter 10 — Theme System</h1>
+<p class="subtitle">theme-system.css — CSS custom properties, design tokens, dark mode, runtime theming</p>
+
+<!-- Theme switcher -->
+<div class="theme-bar">
+  <span style="font-size:11px;color:var(--color-text-muted);margin-right:4px">Theme:</span>
+  <button class="theme-btn" onclick="setTheme('light')">Light</button>
+  <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
+  <button class="theme-btn" onclick="setTheme('high-contrast')">High Contrast</button>
+  <button class="theme-btn" onclick="setTheme('custom')">Custom</button>
+  <button class="theme-btn" onclick="clearTheme()" style="margin-left:auto">Auto (OS)</button>
+  <span id="current-theme-label" style="font-size:11px;color:var(--color-text-muted)"></span>
+</div>
+
+<h2>1. Design Token Hierarchy</h2>
+<p>Primitive tokens define the palette. Semantic tokens assign meaning. Component tokens apply to specific UI elements.</p>
+
+<div class="card">
+  <div class="token-diagram">
+    <div class="token-column">
+      <div class="token-col-header">Primitive</div>
+      <div class="token-list">
+        <div class="token-item">
+          <span class="token-name">--blue-600</span>
+          <div class="color-swatch" style="background:hsl(221 83% 53%)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--blue-400</span>
+          <div class="color-swatch" style="background:hsl(213 94% 68%)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--gray-50</span>
+          <div class="color-swatch" style="background:hsl(210 40% 98%)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--gray-900</span>
+          <div class="color-swatch" style="background:hsl(222 47% 11%)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--space-4</span>
+          <span class="token-val">16px</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--radius-md</span>
+          <span class="token-val">6px</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="token-arrow">→</div>
+
+    <div class="token-column">
+      <div class="token-col-header">Semantic</div>
+      <div class="token-list">
+        <div class="token-item">
+          <span class="token-name">--color-primary</span>
+          <div class="color-swatch" style="background:var(--color-primary)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--color-surface</span>
+          <div class="color-swatch" style="background:var(--color-surface);border-color:var(--color-border)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--color-text</span>
+          <div class="color-swatch" style="background:var(--color-text)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--color-border</span>
+          <div class="color-swatch" style="background:var(--color-border)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--color-success</span>
+          <div class="color-swatch" style="background:var(--color-success)"></div>
+        </div>
+        <div class="token-item">
+          <span class="token-name">--color-error</span>
+          <div class="color-swatch" style="background:var(--color-error)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="token-arrow">→</div>
+
+    <div class="token-column">
+      <div class="token-col-header">Component</div>
+      <div class="token-list">
+        <div class="token-item">
+          <span class="token-name">.btn background</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">.card background</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">body color</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">border-color</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">.badge.success</span>
+        </div>
+        <div class="token-item">
+          <span class="token-name">.badge.error</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>2. Component Showcase</h2>
+<p>Every component reads from semantic tokens. Change the theme above and watch them all update.</p>
+
+<div class="card">
+  <h3>Buttons</h3>
+  <div class="component-row">
+    <button class="btn">Primary</button>
+    <button class="btn ghost">Ghost</button>
+    <button class="btn subtle">Subtle</button>
+    <button class="btn" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+  </div>
+
+  <h3>Badges</h3>
+  <div class="component-row">
+    <span class="badge success">✓ Success</span>
+    <span class="badge warning">⚠ Warning</span>
+    <span class="badge error">✕ Error</span>
+  </div>
+
+  <h3>Form inputs</h3>
+  <div style="max-width:360px;display:flex;flex-direction:column;gap:8px">
+    <input class="input" type="text" placeholder="Type something...">
+    <input class="input" type="email" placeholder="user@example.com">
+    <select>
+      <option>Option 1</option>
+      <option>Option 2</option>
+      <option>Option 3</option>
+    </select>
+  </div>
+
+  <h3 style="margin-top:20px">Cards</h3>
+  <div class="grid-3" style="margin-top:8px">
+    <div class="card" style="padding:16px">
+      <div style="font-size:13px;margin-bottom:4px">Card title</div>
+      <div style="font-size:11px;color:var(--color-text-muted)">Uses surface-raised background and border token.</div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div style="font-size:13px;margin-bottom:4px">Another card</div>
+      <div style="font-size:11px;color:var(--color-text-muted)">Same tokens, same visual relationship in every theme.</div>
+    </div>
+    <div class="card" style="padding:16px;border-color:var(--color-primary)">
+      <div style="font-size:13px;margin-bottom:4px;color:var(--color-primary)">Highlighted</div>
+      <div style="font-size:11px;color:var(--color-text-muted)">Overrides border with --color-primary.</div>
+    </div>
+  </div>
+</div>
+
+<h2>3. Color Palette</h2>
+<p>The primitive palette — 10 steps from light to dark for each hue family.</p>
+
+<div class="card">
+  <div style="margin-bottom:20px">
+    <div class="label" style="margin-bottom:8px">Blues (--blue-50 to --blue-900)</div>
+    <div class="palette-row">
+      <div class="palette-chip" style="background:hsl(214 100% 97%);position:relative"><span class="palette-chip-label">50</span></div>
+      <div class="palette-chip" style="background:hsl(214 95% 93%);position:relative"><span class="palette-chip-label">100</span></div>
+      <div class="palette-chip" style="background:hsl(213 97% 87%);position:relative"><span class="palette-chip-label">200</span></div>
+      <div class="palette-chip" style="background:hsl(212 96% 78%);position:relative"><span class="palette-chip-label">300</span></div>
+      <div class="palette-chip" style="background:hsl(213 94% 68%);position:relative"><span class="palette-chip-label">400</span></div>
+      <div class="palette-chip" style="background:hsl(217 91% 60%);position:relative"><span class="palette-chip-label">500</span></div>
+      <div class="palette-chip" style="background:hsl(221 83% 53%);position:relative"><span class="palette-chip-label">600</span></div>
+      <div class="palette-chip" style="background:hsl(224 76% 48%);position:relative"><span class="palette-chip-label">700</span></div>
+      <div class="palette-chip" style="background:hsl(226 71% 40%);position:relative"><span class="palette-chip-label">800</span></div>
+      <div class="palette-chip" style="background:hsl(224 64% 33%);position:relative"><span class="palette-chip-label">900</span></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:28px">
+    <div class="label" style="margin-bottom:8px">Grays (--gray-50 to --gray-900)</div>
+    <div class="palette-row">
+      <div class="palette-chip" style="background:hsl(210 40% 98%);border:1px solid #e2e8f0;position:relative"><span class="palette-chip-label">50</span></div>
+      <div class="palette-chip" style="background:hsl(210 40% 96%);position:relative"><span class="palette-chip-label">100</span></div>
+      <div class="palette-chip" style="background:hsl(214 32% 91%);position:relative"><span class="palette-chip-label">200</span></div>
+      <div class="palette-chip" style="background:hsl(213 27% 84%);position:relative"><span class="palette-chip-label">300</span></div>
+      <div class="palette-chip" style="background:hsl(215 20% 65%);position:relative"><span class="palette-chip-label">400</span></div>
+      <div class="palette-chip" style="background:hsl(215 16% 47%);position:relative"><span class="palette-chip-label">500</span></div>
+      <div class="palette-chip" style="background:hsl(215 19% 35%);position:relative"><span class="palette-chip-label">600</span></div>
+      <div class="palette-chip" style="background:hsl(215 25% 27%);position:relative"><span class="palette-chip-label">700</span></div>
+      <div class="palette-chip" style="background:hsl(217 33% 17%);position:relative"><span class="palette-chip-label">800</span></div>
+      <div class="palette-chip" style="background:hsl(222 47% 11%);position:relative"><span class="palette-chip-label">900</span></div>
+    </div>
+  </div>
+</div>
+
+<h2>4. Runtime Customizer</h2>
+<p>CSS custom properties are live. Changing <code>--hue</code> on <code>:root</code> updates every component that consumes <code>--color-primary</code> in the same frame.</p>
+
+<div class="customizer">
+  <div class="label">Primary hue (0–360°)</div>
+  <div class="hue-display"></div>
+  <input type="range" class="hue-slider" id="hue-slider" min="0" max="360" value="221" oninput="updateHue(this.value)">
+
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-muted);margin-bottom:16px">
+    <span>0° Red</span>
+    <span id="hue-label" style="color:var(--color-primary)">221° Blue</span>
+    <span>360° Red</span>
+  </div>
+
+  <button class="btn" onclick="applyCustomTheme()">Apply as Custom Theme</button>
+  <span style="font-size:11px;color:var(--color-text-muted);margin-left:12px">Preview updates as you drag</span>
+
+  <div style="margin-top:16px">
+    <div class="component-row">
+      <button class="btn" id="preview-btn">Preview Button</button>
+      <button class="btn ghost" id="preview-ghost">Ghost Button</button>
+      <input class="input" type="text" placeholder="Focus me..." style="max-width:160px">
+      <span class="badge success">preview</span>
+    </div>
+  </div>
+</div>
+
+<h2>5. Animated Gradient (@property)</h2>
+<p>The <code>--gradient-angle</code> custom property is declared with <code>@property syntax: '&lt;angle&gt;'</code>. The browser can interpolate it, so the gradient smoothly rotates on hover.</p>
+
+<div class="gradient-card" id="gradient-card" onclick="this.classList.toggle('spinning')">
+  Hover to rotate gradient · Click to spin
+</div>
+
+<h2>6. Token Inspector</h2>
+<p>All CSS custom properties defined on <code>:root</code>, grouped by type. Values update when you switch themes.</p>
+
+<div class="card" style="padding:16px">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="btn sm" onclick="showGroup('color')">Colors</button>
+    <button class="btn sm ghost" onclick="showGroup('space')">Spacing</button>
+    <button class="btn sm ghost" onclick="showGroup('radius')">Radii</button>
+    <button class="btn sm ghost" onclick="showGroup('all')">All</button>
+    <button class="btn sm subtle" onclick="refreshInspector()" style="margin-left:auto">Refresh</button>
+  </div>
+  <div id="inspector-output" class="inspector-grid"></div>
+</div>
+
+<h2>7. var() Fallback Chain</h2>
+<div class="card">
+  <pre style="font-size:11px;color:var(--color-text-muted);line-height:1.9;overflow-x:auto">
+var(--color-primary, var(--blue-600, hsl(221 83% 53%)))
+    │                │               │
+    ▼                ▼               ▼
+   defined?         defined?      hardcoded fallback
+     │                │               │
+    yes──►value       yes──►value     always used if
+     │                │               both above are
+    no ──────────────►no ────────────►undefined
+  </pre>
+  <div style="margin-top:12px">
+    <div class="label">Live example — computed value of --color-primary on this element:</div>
+    <div id="computed-primary" style="display:flex;align-items:center;gap:10px;margin-top:6px;font-size:12px">
+      <div id="primary-swatch" style="width:32px;height:32px;border-radius:4px;background:var(--color-primary);border:1px solid var(--color-border)"></div>
+      <code id="primary-value"></code>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Theme Management ────────────────────────────────────────────────────────
+
+function setTheme(name) {
+  document.documentElement.setAttribute('data-theme', name);
+  localStorage.setItem('kw-theme', name);
+  updateThemeUI();
+  setTimeout(refreshInspector, 50);
+}
+
+function clearTheme() {
+  document.documentElement.removeAttribute('data-theme');
+  localStorage.removeItem('kw-theme');
+  updateThemeUI();
+  setTimeout(refreshInspector, 50);
+}
+
+function updateThemeUI() {
+  const current = document.documentElement.getAttribute('data-theme') || 'auto';
+  document.getElementById('current-theme-label').textContent = 'Active: ' + current;
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.toLowerCase().replace(/\s+/g,'').includes(current.replace(/\s+/g,'').toLowerCase())) {
+      btn.classList.add('active');
+    }
+    if (current === 'auto' && btn.textContent === 'Auto (OS)') btn.classList.add('active');
+  });
+}
+
+// ─── Runtime Hue Customizer ──────────────────────────────────────────────────
+
+const HUE_NAMES = {
+  0: 'Red', 30: 'Orange', 60: 'Yellow', 90: 'Chartreuse',
+  120: 'Green', 150: 'Spring Green', 180: 'Cyan',
+  210: 'Azure', 221: 'Blue', 240: 'Indigo', 270: 'Violet',
+  300: 'Magenta', 330: 'Rose', 360: 'Red'
+};
+
+function getHueName(hue) {
+  const keys = Object.keys(HUE_NAMES).map(Number).sort((a,b)=>a-b);
+  let closest = keys[0];
+  for (const k of keys) {
+    if (Math.abs(k - hue) < Math.abs(closest - hue)) closest = k;
+  }
+  return HUE_NAMES[closest];
+}
+
+let previewHue = 221;
+
+function updateHue(val) {
+  previewHue = parseInt(val);
+  document.getElementById('hue-label').textContent = `${val}° ${getHueName(previewHue)}`;
+
+  // Update preview elements temporarily without setting theme
+  if (document.documentElement.getAttribute('data-theme') === 'custom' ||
+      !document.documentElement.getAttribute('data-theme')) {
+    document.documentElement.style.setProperty('--hue', val);
+  }
+}
+
+function applyCustomTheme() {
+  document.documentElement.style.setProperty('--hue', previewHue);
+  setTheme('custom');
+}
+
+// ─── Token Inspector ─────────────────────────────────────────────────────────
+
+let currentGroup = 'color';
+
+function showGroup(group) {
+  currentGroup = group;
+  refreshInspector();
+  // Update button styles
+  document.querySelectorAll('[onclick^="showGroup"]').forEach(btn => {
+    if (btn.getAttribute('onclick').includes(`'${group}'`)) {
+      btn.className = 'btn sm';
+    } else {
+      btn.className = 'btn sm ghost';
+    }
+  });
+}
+
+function refreshInspector() {
+  const root = document.documentElement;
+  const computed = getComputedStyle(root);
+  const tokens = [];
+
+  // Walk all stylesheets
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (!rule.style) continue;
+        const text = rule.cssText;
+        const matches = [...text.matchAll(/--([\w-]+)\s*:/g)];
+        for (const m of matches) {
+          const name = '--' + m[1];
+          const value = computed.getPropertyValue(name).trim();
+          if (value && !tokens.find(t => t.name === name)) {
+            tokens.push({ name, value });
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  let filtered = tokens;
+  if (currentGroup === 'color') filtered = tokens.filter(t => t.name.includes('color') || t.name.includes('blue') || t.name.includes('gray'));
+  else if (currentGroup === 'space') filtered = tokens.filter(t => t.name.includes('space'));
+  else if (currentGroup === 'radius') filtered = tokens.filter(t => t.name.includes('radius'));
+
+  const output = document.getElementById('inspector-output');
+  output.innerHTML = filtered.map(t => {
+    const isColor = /^hsl|^rgb|^#/.test(t.value.trim()) || t.name.includes('color') || t.name.includes('blue') || t.name.includes('gray');
+    const swatch = isColor
+      ? `<div class="color-swatch" style="background:${t.value};flex-shrink:0"></div>`
+      : '';
+    return `<div class="inspector-item">
+      ${swatch}
+      <span class="inspector-name" title="${t.name}">${t.name}</span>
+      <span class="inspector-value">${t.value.substring(0, 20)}${t.value.length > 20 ? '…' : ''}</span>
+    </div>`;
+  }).join('');
+
+  // Update computed primary
+  const primaryVal = computed.getPropertyValue('--color-primary').trim();
+  const el = document.getElementById('primary-value');
+  if (el) el.textContent = primaryVal || 'not set';
+}
+
+// Init
+updateThemeUI();
+setTimeout(refreshInspector, 100);
+</script>
+</body>
+</html>

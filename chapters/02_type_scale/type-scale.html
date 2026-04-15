@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Build Your Own Type Scale — Chapter 2</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE LIBRARY: miniTypeScale
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ─── Step 1: Size tokens ────────────────────────────────────────────
+       Seven sizes from a 1.25 (Major Third) ratio scale.
+       Each uses clamp() for fluid scaling between min and max.            */
+    :root {
+      --text-xs:   clamp(0.64rem,  0.60rem + 0.2vw,  0.75rem);
+      --text-sm:   clamp(0.80rem,  0.75rem + 0.25vw, 0.90rem);
+      --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+      --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
+      --text-xl:   clamp(1.25rem,  1rem    + 1vw,    1.75rem);
+      --text-2xl:  clamp(1.5rem,   1rem    + 2vw,    2.25rem);
+      --text-3xl:  clamp(2rem,     1rem    + 4vw,    3.5rem);
+    }
+
+    /* ─── Step 2: Line height tokens ────────────────────────────────────
+       Unitless values — scale with the current font-size automatically.   */
+    :root {
+      --leading-none:    1;
+      --leading-tight:   1.25;
+      --leading-snug:    1.375;
+      --leading-normal:  1.5;
+      --leading-relaxed: 1.625;
+      --leading-loose:   2;
+    }
+
+    /* ─── Step 3: Letter spacing tokens ─────────────────────────────────
+       em-based — scale proportionally with font size.                     */
+    :root {
+      --tracking-tight:   -0.05em;
+      --tracking-normal:   0em;
+      --tracking-wide:     0.05em;
+      --tracking-widest:   0.15em;
+    }
+
+    /* ─── Step 4: Font weight tokens ────────────────────────────────────  */
+    :root {
+      --font-normal:   400;
+      --font-medium:   500;
+      --font-semibold: 600;
+      --font-bold:     700;
+      --font-black:    900;
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE APPLICATION — demo UI
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0d0d1a;
+      color: #c8c8d8;
+      padding: 24px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    h1.page-title { color: #a8d8ea; font-size: 1.3em; margin-bottom: 4px; font-weight: 700; }
+    .subtitle { color: #555; font-size: 0.85em; margin-bottom: 28px; }
+
+    /* Controls */
+    .controls {
+      display: flex; gap: 10px; margin-bottom: 20px;
+      flex-wrap: wrap; align-items: center;
+    }
+    .slider-group {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82em; color: #666;
+    }
+    input[type="range"] {
+      width: 120px; accent-color: #a8d8ea;
+    }
+    .mode-btn {
+      background: #1a1a2e; color: #888;
+      border: 1px solid #333; padding: 5px 12px; border-radius: 4px;
+      cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.82em;
+      transition: all 0.15s;
+    }
+    .mode-btn.active { background: #0f3460; color: #a8d8ea; border-color: #a8d8ea; }
+
+    /* Token table */
+    .token-table {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .token-row {
+      display: grid;
+      grid-template-columns: 140px 160px 80px 1fr;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #111128;
+      align-items: center;
+      transition: background 0.1s;
+      cursor: pointer;
+    }
+    .token-row:hover { background: #0f0f20; }
+    .token-row:last-child { border-bottom: none; }
+
+    .token-name { color: #a8d8ea; font-size: 0.82em; }
+    .token-value { color: #7ec87e; font-size: 0.78em; }
+    .token-px { color: #555; font-size: 0.75em; }
+    .token-preview { color: #c8c8d8; white-space: nowrap; overflow: hidden; }
+
+    /* Specimen area */
+    .specimen {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      padding: 32px;
+      margin-bottom: 20px;
+    }
+    .specimen-sample {
+      margin-bottom: 24px;
+      border-bottom: 1px solid #111128;
+      padding-bottom: 20px;
+    }
+    .specimen-sample:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .specimen-meta {
+      font-size: 0.72em; color: #444; margin-top: 4px;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Scale visualization */
+    .scale-bars {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .scale-bar-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .scale-bar-label { font-size: 0.75em; color: #555; width: 80px; flex-shrink: 0; }
+    .scale-bar-track {
+      flex: 1; height: 6px; background: #1a1a2e; border-radius: 3px;
+      position: relative;
+    }
+    .scale-bar-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(to right, #1a5276, #a8d8ea);
+      transition: width 0.3s ease;
+    }
+    .scale-bar-val { font-size: 0.72em; color: #7ec87e; width: 50px; text-align: right; flex-shrink: 0; }
+
+    .copied-msg {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #0f3460; color: #a8d8ea; border: 1px solid #a8d8ea;
+      padding: 8px 14px; border-radius: 4px; font-size: 0.82em;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    }
+    .copied-msg.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1 class="page-title">Build Your Own Type Scale</h1>
+  <p class="subtitle">Chapter 2 — rem, clamp(), modular scale, and fluid typography</p>
+
+  <div class="controls">
+    <div class="slider-group">
+      <label>Root: <span id="rootVal">16</span>px</label>
+      <input type="range" id="rootSlider" min="12" max="24" value="16" oninput="updateRoot(this.value)">
+    </div>
+    <div class="slider-group">
+      <label>Viewport: <span id="vpVal">1200</span>px</label>
+      <input type="range" id="vpSlider" min="320" max="1600" value="1200" oninput="updateViewport(this.value)">
+    </div>
+    <button class="mode-btn active" onclick="setMode('tokens')" id="btnTokens">Tokens</button>
+    <button class="mode-btn" onclick="setMode('specimen')" id="btnSpecimen">Specimen</button>
+    <button class="mode-btn" onclick="setMode('scale')" id="btnScale">Scale</button>
+  </div>
+
+  <!-- Token table view -->
+  <div class="token-table" id="viewTokens">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- Specimen view -->
+  <div class="specimen" id="viewSpecimen" style="display:none">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- Scale bars view -->
+  <div class="scale-bars" id="viewScale" style="display:none">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="copied-msg" id="copiedMsg">Copied to clipboard</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  THE DATA: type scale tokens with clamp() definitions
+// ═══════════════════════════════════════════════════════════════════════
+
+const TOKENS = [
+  { name: '--text-xs',   min: 0.64, a: 0.60, b: 0.20, max: 0.75,  label: 'Extra Small',  sample: 'footnote / caption' },
+  { name: '--text-sm',   min: 0.80, a: 0.75, b: 0.25, max: 0.90,  label: 'Small',        sample: 'secondary text, labels' },
+  { name: '--text-base', min: 1.00, a: 0.95, b: 0.25, max: 1.125, label: 'Base',         sample: 'body copy, paragraphs' },
+  { name: '--text-lg',   min: 1.125,a: 1.00, b: 0.50, max: 1.375, label: 'Large',        sample: 'lead paragraph, intro' },
+  { name: '--text-xl',   min: 1.25, a: 1.00, b: 1.00, max: 1.75,  label: 'Extra Large',  sample: 'h3, section headings' },
+  { name: '--text-2xl',  min: 1.50, a: 1.00, b: 2.00, max: 2.25,  label: '2X Large',     sample: 'h2, page sections' },
+  { name: '--text-3xl',  min: 2.00, a: 1.00, b: 4.00, max: 3.50,  label: '3X Large',     sample: 'h1, hero headings' },
+];
+
+let rootPx = 16;
+let vpPx   = 1200;
+let currentMode = 'tokens';
+
+// Compute the fluid value at a given viewport width
+function computeSize(token, vp, root) {
+  const preferred = token.a + (token.b * vp / 100) / root;   // in rem
+  return Math.min(token.max, Math.max(token.min, preferred));
+}
+
+function formatClamp(token) {
+  return `clamp(${token.min}rem, ${token.a}rem + ${token.b}vw, ${token.max}rem)`;
+}
+
+// ─── Token table view ─────────────────────────────────────────────────
+
+function renderTokens() {
+  const table = document.getElementById('viewTokens');
+  table.innerHTML = '';
+
+  TOKENS.forEach(token => {
+    const sizePx = Math.round(computeSize(token, vpPx, rootPx) * rootPx * 10) / 10;
+    const row = document.createElement('div');
+    row.className = 'token-row';
+    row.title = 'Click to copy';
+    row.onclick = () => copyToken(token.name);
+    row.innerHTML = `
+      <span class="token-name">${token.name}</span>
+      <span class="token-value">${formatClamp(token)}</span>
+      <span class="token-px">≈ ${sizePx}px</span>
+      <span class="token-preview" style="font-size:${computeSize(token,vpPx,rootPx)}rem;line-height:1.2">
+        ${token.label}
+      </span>
+    `;
+    table.appendChild(row);
+  });
+}
+
+// ─── Specimen view ────────────────────────────────────────────────────
+
+const SPECIMEN_TEXT = [
+  { token: '--text-3xl', text: 'The quick brown fox', weight: 800, leading: 1.1, tracking: '-0.02em', role: 'Hero Heading (h1)' },
+  { token: '--text-2xl', text: 'Jumped over the lazy dog', weight: 700, leading: 1.2, tracking: '-0.01em', role: 'Section Heading (h2)' },
+  { token: '--text-xl',  text: 'A fluid type scale built with clamp()', weight: 600, leading: 1.3, tracking: '0', role: 'Subheading (h3)' },
+  { token: '--text-lg',  text: 'Lead paragraph text for the opening of a section, slightly larger than body', weight: 400, leading: 1.5, tracking: '0', role: 'Lead (p.lead)' },
+  { token: '--text-base',text: 'Body copy. This is the standard paragraph text. It should be comfortable for reading at length, with a generous line height that prevents lines from feeling cramped.', weight: 400, leading: 1.6, tracking: '0', role: 'Body (p)' },
+  { token: '--text-sm',  text: 'Secondary information, captions, and helper text. Used for metadata.', weight: 400, leading: 1.5, tracking: '0', role: 'Small (small)' },
+  { token: '--text-xs',  text: 'Footnotes, legal copy, fine print. Smallest readable size.', weight: 400, leading: 1.4, tracking: '0.01em', role: 'Tiny (figcaption)' },
+];
+
+function renderSpecimen() {
+  const spec = document.getElementById('viewSpecimen');
+  spec.innerHTML = '';
+
+  SPECIMEN_TEXT.forEach(item => {
+    const size = computeSize(TOKENS.find(t => t.name === item.token), vpPx, rootPx);
+    const sizePx = Math.round(size * rootPx * 10) / 10;
+    const div = document.createElement('div');
+    div.className = 'specimen-sample';
+    div.innerHTML = `
+      <div style="font-size:${size}rem;font-weight:${item.weight};line-height:${item.leading};letter-spacing:${item.tracking};color:#c8c8d8">
+        ${item.text}
+      </div>
+      <div class="specimen-meta">
+        ${item.role} · ${item.token} · ≈ ${sizePx}px at ${vpPx}px viewport
+      </div>
+    `;
+    spec.appendChild(div);
+  });
+}
+
+// ─── Scale bars view ──────────────────────────────────────────────────
+
+function renderScaleBars() {
+  const container = document.getElementById('viewScale');
+  container.innerHTML = '';
+  const maxSize = computeSize(TOKENS[TOKENS.length - 1], vpPx, rootPx);
+
+  TOKENS.forEach(token => {
+    const size = computeSize(token, vpPx, rootPx);
+    const pct = (size / maxSize) * 100;
+    const sizePx = Math.round(size * rootPx * 10) / 10;
+    const row = document.createElement('div');
+    row.className = 'scale-bar-row';
+    row.innerHTML = `
+      <span class="scale-bar-label">${token.name.replace('--text-', 'text-')}</span>
+      <div class="scale-bar-track">
+        <div class="scale-bar-fill" style="width:${pct}%"></div>
+      </div>
+      <span class="scale-bar-val">${size.toFixed(3)}rem</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ─── Controls ─────────────────────────────────────────────────────────
+
+function updateRoot(val) {
+  rootPx = parseInt(val);
+  document.getElementById('rootVal').textContent = rootPx;
+  document.documentElement.style.fontSize = rootPx + 'px';
+  renderAll();
+}
+
+function updateViewport(val) {
+  vpPx = parseInt(val);
+  document.getElementById('vpVal').textContent = vpPx;
+  renderAll();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('viewTokens').style.display   = mode === 'tokens'   ? 'block' : 'none';
+  document.getElementById('viewSpecimen').style.display = mode === 'specimen' ? 'block' : 'none';
+  document.getElementById('viewScale').style.display    = mode === 'scale'    ? 'flex'  : 'none';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+  renderAll();
+}
+
+function renderAll() {
+  renderTokens();
+  renderSpecimen();
+  renderScaleBars();
+}
+
+function copyToken(name) {
+  navigator.clipboard.writeText(`var(${name})`).catch(() => {});
+  const msg = document.getElementById('copiedMsg');
+  msg.textContent = `Copied: var(${name})`;
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+}
+
+renderAll();
+</script>
+</body>
+</html>

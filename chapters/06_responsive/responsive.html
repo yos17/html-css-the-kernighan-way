@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6 — Responsive Framework Playground</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0d1a;
+    --bg2:       #111122;
+    --bg3:       #1a1a2e;
+    --bg4:       #16213e;
+    --text:      #c8c8d8;
+    --text-dim:  #7878a0;
+    --accent:    #a8d8ea;
+    --accent2:   #e8a0d8;
+    --accent3:   #a8eac8;
+    --accent4:   #ead8a8;
+    --border:    #2a2a40;
+    --radius:    6px;
+    --mono:      'Courier New', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 { font-size: 1.6rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-dim); margin-bottom: 2.5rem; font-size: 0.875rem; }
+  h2 {
+    font-size: 1rem; color: var(--accent); margin-bottom: 1rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .section { margin-bottom: 3rem; }
+  .divider { height: 1px; background: var(--border); margin: 2.5rem 0; }
+  .chapter-tag { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+    margin-bottom: 1.25rem; align-items: center;
+  }
+
+  .btn {
+    background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+    padding: 0.35rem 0.85rem; font-family: var(--mono); font-size: 0.8rem;
+    border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
+  }
+  .btn:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+
+  label { color: var(--text-dim); font-size: 0.8rem; }
+  input[type="range"] { accent-color: var(--accent); width: 130px; }
+
+  .control-val { color: var(--accent); font-size: 0.8rem; min-width: 3.5rem; }
+
+  .demo-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; overflow: hidden;
+  }
+
+  pre {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; overflow-x: auto;
+    font-size: 0.8rem; line-height: 1.7; color: #a8c8ff; margin-top: 0.75rem;
+  }
+
+  .kw   { color: #a8d8ea; }
+  .prop { color: #e8a0d8; }
+  .val  { color: #a8eac8; }
+  .cmt  { color: #555577; }
+  .str  { color: #ead8a8; }
+
+  code { color: var(--accent); font-size: 0.85em; }
+
+  .info-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+  .chip {
+    background: var(--bg3); border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; color: var(--text-dim);
+  }
+  .chip span { color: var(--accent); }
+
+  /* ─── Breakpoint Visualizer ───────────────────────────── */
+  .bp-track {
+    position: relative;
+    height: 32px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .bp-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(to right, rgba(168,216,234,0.3), rgba(168,216,234,0.1));
+    transition: width 0.2s;
+  }
+
+  .bp-marker {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--accent2);
+    opacity: 0.6;
+  }
+
+  .bp-marker::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  .bp-current-label {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--accent);
+  }
+
+  .bp-size-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .bp-badge {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    background: var(--bg3);
+    transition: all 0.2s;
+  }
+
+  .bp-badge.current {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(168,216,234,0.1);
+  }
+
+  /* ─── Simulated viewport ──────────────────────────────── */
+  .sim-frame-wrap {
+    overflow: hidden;
+    transition: width 0.3s ease;
+    margin: 0 auto;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+  }
+
+  .sim-frame {
+    width: 100%;
+    background: var(--bg3);
+    padding: 1rem;
+  }
+
+  .sim-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg4);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+  }
+
+  .sim-nav-links {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .sim-nav-link {
+    padding: 0.25rem 0.5rem;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .sim-hero {
+    background: var(--bg2);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+  }
+
+  .sim-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .sim-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* ─── Clamp visualizer ───────────────────────────────── */
+  .clamp-bar {
+    position: relative;
+    height: 40px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .clamp-min-zone {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: rgba(168,216,234,0.15);
+    border-right: 2px dashed var(--accent);
+  }
+
+  .clamp-max-zone {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    background: rgba(232,160,216,0.15);
+    border-left: 2px dashed var(--accent2);
+  }
+
+  .clamp-flex-zone {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: rgba(168,234,200,0.2);
+  }
+
+  .clamp-indicator {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent3);
+  }
+
+  .clamp-result {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--accent3);
+  }
+
+  /* ─── Container query demo ───────────────────────────── */
+  .cq-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+  }
+
+  .cq-col {
+    container-type: inline-size;
+    container-name: cqdemo;
+  }
+
+  .cq-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .cq-card-img {
+    background: linear-gradient(135deg, var(--bg4), var(--bg2));
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .cq-card-body { padding: 0.75rem; font-size: 0.8rem; }
+  .cq-card-title { color: var(--accent); font-size: 0.85rem; margin-bottom: 0.25rem; }
+  .cq-card-text  { color: var(--text-dim); font-size: 0.75rem; }
+
+  @container cqdemo (min-width: 300px) {
+    .cq-card {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+    }
+    .cq-card-img { aspect-ratio: 1/1; }
+  }
+
+  .cq-indicator {
+    font-size: 0.7rem;
+    color: var(--accent2);
+    padding: 0.2rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(232,160,216,0.08);
+  }
+
+  /* ─── Type scale demo ──────────────────────────────── */
+  .type-scale-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .type-scale-label {
+    width: 80px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .type-scale-val {
+    width: 55px;
+    font-size: 0.7rem;
+    color: var(--accent4);
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .type-scale-sample { line-height: 1.2; }
+
+  /* ─── @layer demo ────────────────────────────────── */
+  @layer reset2, base2, components2, utilities2;
+
+  @layer base2 {
+    .layer-demo-el { color: #666; background: #1a1a2e; padding: 0.75rem; border-radius: 4px; }
+  }
+
+  @layer components2 {
+    .layer-demo-el.card-el { background: #16213e; border: 1px solid #333; font-size: 1.1rem; }
+  }
+
+  @layer utilities2 {
+    .layer-demo-el.text-accent { color: var(--accent); }
+    .layer-demo-el.bg-highlight { background: rgba(168,216,234,0.1); }
+  }
+
+  .layer-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-right: 0.25rem;
+    vertical-align: middle;
+  }
+  .layer-reset     { background: rgba(168,216,234,0.15); color: var(--accent);  }
+  .layer-base      { background: rgba(232,160,216,0.15); color: var(--accent2); }
+  .layer-comp      { background: rgba(168,234,200,0.15); color: var(--accent3); }
+  .layer-util      { background: rgba(234,216,168,0.15); color: var(--accent4); }
+  .layer-unlayered { background: rgba(200,200,200,0.15); color: var(--text);    }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="chapter-tag">HTML &amp; CSS: The Kernighan Way</div>
+  <h1>Chapter 6 — Responsive Framework</h1>
+  <p class="subtitle">Mobile-first design, fluid typography, container queries, and cascade layers — interactive.</p>
+
+  <!-- ─── 1: Breakpoint Visualizer ─────────────────────── -->
+  <div class="section">
+    <h2>1. Breakpoint Visualizer</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Your current viewport width, and where it falls in the breakpoint scale.
+    </p>
+
+    <div class="bp-size-badges" id="bpBadges">
+      <div class="bp-badge" data-bp="0">xs &lt;640px</div>
+      <div class="bp-badge" data-bp="640">sm 640px+</div>
+      <div class="bp-badge" data-bp="768">md 768px+</div>
+      <div class="bp-badge" data-bp="1024">lg 1024px+</div>
+      <div class="bp-badge" data-bp="1280">xl 1280px+</div>
+    </div>
+
+    <div class="bp-track" id="bpTrack">
+      <div class="bp-fill" id="bpFill"></div>
+      <div class="bp-current-label" id="bpLabel">—</div>
+    </div>
+
+    <div class="info-row" id="bpInfo"></div>
+
+    <!-- Simulated viewport demo -->
+    <div style="margin-top:1.5rem;">
+      <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:0.75rem;">
+        Simulate a viewport width to preview the responsive layout:
+      </p>
+      <div class="controls">
+        <label>Simulated width:</label>
+        <input type="range" id="simWidth" min="300" max="1100" value="375">
+        <span class="control-val" id="simWidthVal">375px</span>
+        <button class="btn" data-w="375">Phone</button>
+        <button class="btn" data-w="640">Tablet</button>
+        <button class="btn" data-w="1024">Desktop</button>
+      </div>
+
+      <div style="max-width:100%;overflow:hidden;">
+        <div class="sim-frame-wrap" id="simFrameWrap">
+          <div class="sim-frame">
+            <div class="sim-nav" id="simNav">
+              <div style="color:var(--accent);font-size:0.8rem;font-weight:bold;">Brand</div>
+              <div class="sim-nav-links" id="simNavLinks">
+                <div class="sim-nav-link">Home</div>
+                <div class="sim-nav-link">About</div>
+                <div class="sim-nav-link">Work</div>
+              </div>
+              <div id="simHamburger" style="display:none;color:var(--text-dim);font-size:0.9rem;">☰</div>
+            </div>
+            <div class="sim-hero">
+              <div style="font-size:var(--sim-h1,1.2rem);color:var(--accent);margin-bottom:0.25rem;" id="simH1">Responsive Heading</div>
+              <div style="font-size:0.75rem;color:var(--text-dim);">Subtext that adapts to the container</div>
+            </div>
+            <div class="sim-grid" id="simGrid">
+              <div class="sim-card">Card 1</div>
+              <div class="sim-card">Card 2</div>
+              <div class="sim-card">Card 3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Mobile-first: base = mobile, min-width adds desktop */</span>
+<span class="prop">.nav</span>   { <span class="kw">flex-direction</span>: <span class="val">column</span>; }
+<span class="prop">.grid</span>  { <span class="kw">grid-template-columns</span>: <span class="val">1fr</span>; }
+
+<span class="kw">@media</span> (<span class="prop">min-width</span>: <span class="val">640px</span>) {
+  <span class="prop">.nav</span>  { <span class="kw">flex-direction</span>: <span class="val">row</span>; }
+  <span class="prop">.grid</span> { <span class="kw">grid-template-columns</span>: <span class="val">repeat(2, 1fr)</span>; }
+}
+
+<span class="kw">@media</span> (<span class="prop">min-width</span>: <span class="val">1024px</span>) {
+  <span class="prop">.grid</span> { <span class="kw">grid-template-columns</span>: <span class="val">repeat(3, 1fr)</span>; }
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 2: clamp() visualizer ─────────────────────────── -->
+  <div class="section">
+    <h2>2. The clamp() Function</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Drag the viewport slider to see how <code>clamp(min, preferred_vw, max)</code> produces a fluid value.
+    </p>
+
+    <div class="controls">
+      <label>Min (rem):</label>
+      <input type="range" id="clampMin" min="8" max="24" value="16" step="2">
+      <span class="control-val" id="clampMinVal">1rem</span>
+
+      <label>Max (rem):</label>
+      <input type="range" id="clampMax" min="24" max="64" value="48" step="2">
+      <span class="control-val" id="clampMaxVal">3rem</span>
+
+      <label>vw:</label>
+      <input type="range" id="clampVw" min="1" max="10" value="4" step="0.5">
+      <span class="control-val" id="clampVwVal">4vw</span>
+    </div>
+
+    <div class="controls">
+      <label>Simulated viewport:</label>
+      <input type="range" id="clampVp" min="300" max="1400" value="800">
+      <span class="control-val" id="clampVpVal">800px</span>
+    </div>
+
+    <div class="clamp-bar" id="clampBar">
+      <div class="clamp-min-zone" id="clampMinZone"></div>
+      <div class="clamp-max-zone" id="clampMaxZone"></div>
+      <div class="clamp-flex-zone" id="clampFlexZone"></div>
+      <div class="clamp-indicator" id="clampIndicator"></div>
+      <div class="clamp-result" id="clampResult"></div>
+    </div>
+
+    <div class="info-row" id="clampInfo"></div>
+
+    <div style="margin-top:1rem;padding:1rem;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border);">
+      <div style="color:var(--text-dim);font-size:0.75rem;margin-bottom:0.5rem;">Live preview at simulated viewport:</div>
+      <div id="clampPreviewText" style="color:var(--text);transition:font-size 0.1s;">Fluid Heading Text</div>
+    </div>
+
+    <pre><span class="prop">h1</span> {
+  <span class="kw">font-size</span>: <span class="val">clamp(<span id="codeClampMin">1rem</span>, <span id="codeClampVw">4vw</span>, <span id="codeClampMax">3rem</span>)</span>;
+  <span class="cmt">/* At <span id="codeClampVp">800px</span> viewport: preferred = <span id="codeClampPref">32px</span> → result = <span id="codeClampRes">32px</span> */</span>
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 3: Fluid Type Scale ───────────────────────────── -->
+  <div class="section">
+    <h2>3. Fluid Type Scale</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Drag the viewport slider to see each size clamp to its min/max.
+    </p>
+
+    <div class="controls">
+      <label>Simulated viewport:</label>
+      <input type="range" id="typeVp" min="300" max="1400" value="800">
+      <span class="control-val" id="typeVpVal">800px</span>
+    </div>
+
+    <div class="demo-box" id="typeScaleDemo"></div>
+
+    <pre><span class="kw">:root</span> {
+  <span class="prop">--text-xs</span>:   <span class="val">clamp(0.75rem,  1.5vw,  0.875rem)</span>;
+  <span class="prop">--text-sm</span>:   <span class="val">clamp(0.875rem, 2vw,    1rem)</span>;
+  <span class="prop">--text-base</span>: <span class="val">clamp(1rem,     2.5vw,  1.125rem)</span>;
+  <span class="prop">--text-lg</span>:   <span class="val">clamp(1.125rem, 3vw,    1.25rem)</span>;
+  <span class="prop">--text-xl</span>:   <span class="val">clamp(1.25rem,  3.5vw,  1.5rem)</span>;
+  <span class="prop">--text-2xl</span>:  <span class="val">clamp(1.5rem,   4vw,    2rem)</span>;
+  <span class="prop">--text-3xl</span>:  <span class="val">clamp(1.875rem, 5vw,    2.5rem)</span>;
+  <span class="prop">--text-4xl</span>:  <span class="val">clamp(2.25rem,  6vw,    3.5rem)</span>;
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 4: Container Queries ──────────────────────────── -->
+  <div class="section">
+    <h2>4. Container Queries</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      The same card component responds to its <em>container</em> width — not the viewport.
+      Drag to resize the columns.
+    </p>
+
+    <div class="controls">
+      <label>Left column width:</label>
+      <input type="range" id="cqLeft" min="20" max="75" value="35">
+      <span class="control-val" id="cqLeftVal">35%</span>
+    </div>
+
+    <div class="demo-box">
+      <div class="cq-layout" id="cqLayout">
+        <div class="cq-col" id="cqCol1">
+          <div class="cq-indicator" id="cqInd1">container: measuring...</div>
+          <div class="cq-card">
+            <div class="cq-card-img">img</div>
+            <div class="cq-card-body">
+              <div class="cq-card-title">Card Title</div>
+              <div class="cq-card-text">Layout adapts to container width</div>
+            </div>
+          </div>
+        </div>
+        <div class="cq-col" id="cqCol2">
+          <div class="cq-indicator" id="cqInd2">container: measuring...</div>
+          <div class="cq-card">
+            <div class="cq-card-img">img</div>
+            <div class="cq-card-body">
+              <div class="cq-card-title">Card Title</div>
+              <div class="cq-card-text">Layout adapts to container width</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Define a containment context */</span>
+<span class="prop">.card-wrapper</span> {
+  <span class="kw">container-type</span>: <span class="val">inline-size</span>;
+  <span class="kw">container-name</span>: <span class="val">card</span>;
+}
+
+<span class="cmt">/* Query the container, not the viewport */</span>
+<span class="kw">@container</span> card (<span class="prop">min-width</span>: <span class="val">300px</span>) {
+  <span class="prop">.card</span> {
+    <span class="kw">display</span>: <span class="val">grid</span>;
+    <span class="kw">grid-template-columns</span>: <span class="val">100px 1fr</span>;
+  }
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 5: @layer Demo ────────────────────────────────── -->
+  <div class="section">
+    <h2>5. Cascade Layers (@layer)</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      Layers determine which styles win — regardless of specificity. Toggle classes to see layers compete.
+    </p>
+
+    <div class="controls">
+      <button class="btn active" id="layerBase">base layer: color: #666</button>
+      <button class="btn" id="layerComp">+components layer: card style</button>
+      <button class="btn" id="layerUtil">+utilities layer: text-accent</button>
+    </div>
+
+    <div class="demo-box">
+      <div class="layer-demo-el" id="layerEl">
+        This element's style is determined by layers.
+        <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-dim)" id="layerStatus"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.5rem;">Layer priority (lowest → highest):</div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+        <span class="layer-badge layer-reset">reset</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span class="layer-badge layer-base">base</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span class="layer-badge layer-comp">components</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span class="layer-badge layer-util">utilities</span>
+        <span style="color:var(--text-dim)">→</span>
+        <span class="layer-badge layer-unlayered">unlayered (highest!)</span>
+      </div>
+    </div>
+
+    <pre><span class="kw">@layer</span> <span class="val">reset, base, components, utilities</span>;
+
+<span class="kw">@layer</span> base {
+  <span class="prop">.element</span> { <span class="kw">color</span>: <span class="val">#666</span>; }
+}
+
+<span class="kw">@layer</span> components {
+  <span class="prop">.element.card</span> { <span class="kw">color</span>: <span class="val">#eee</span>; <span class="kw">background</span>: <span class="val">#16213e</span>; }
+  <span class="cmt">/* specificity: 0-2-0 — normally beats utilities */</span>
+}
+
+<span class="kw">@layer</span> utilities {
+  <span class="prop">.text-accent</span> { <span class="kw">color</span>: <span class="val">#a8d8ea</span>; }
+  <span class="cmt">/* specificity: 0-1-0 — but utilities layer wins! */</span>
+}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ─── 6: Viewport Units ─────────────────────────────── -->
+  <div class="section">
+    <h2>6. Viewport Units: vh vs dvh</h2>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:1rem;">
+      On mobile browsers, the address bar hides on scroll — changing the visible height. <code>dvh</code> tracks the dynamic visible height.
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--accent);margin-bottom:0.4rem;">vw — viewport width</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.75rem;font-size:0.75rem;color:var(--text-dim);">
+          1vw = <span style="color:var(--accent)" id="vwVal">—</span><br>
+          50vw = <span style="color:var(--accent)" id="vw50Val">—</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--accent2);margin-bottom:0.4rem;">vh — viewport height</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.75rem;font-size:0.75rem;color:var(--text-dim);">
+          1vh = <span style="color:var(--accent2)" id="vhVal">—</span><br>
+          100vh = <span style="color:var(--accent2)" id="vh100Val">—</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--accent3);margin-bottom:0.4rem;">dvh — dynamic height</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.75rem;font-size:0.75rem;color:var(--text-dim);">
+          Tracks visible area<br>
+          <span style="color:var(--accent3)">Use for mobile full-height</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--accent4);margin-bottom:0.4rem;">svh/lvh</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.75rem;font-size:0.75rem;color:var(--text-dim);">
+          svh = small (UI visible)<br>
+          lvh = large (UI hidden)
+        </div>
+      </div>
+    </div>
+
+    <pre><span class="cmt">/* Broken on mobile — vh doesn't account for browser UI */</span>
+<span class="prop">.hero</span> { <span class="kw">height</span>: <span class="val">100vh</span>; }
+
+<span class="cmt">/* Correct — dvh tracks actual visible height */</span>
+<span class="prop">.hero</span> {
+  <span class="kw">height</span>: <span class="val">100vh</span>;   <span class="cmt">/* fallback */</span>
+  <span class="kw">height</span>: <span class="val">100dvh</span>; <span class="cmt">/* dynamic viewport height */</span>
+}</pre>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+const $ = id => document.getElementById(id);
+function chip(label, value) {
+  const c = document.createElement('div');
+  c.className = 'chip';
+  c.innerHTML = `${label}: <span>${value}</span>`;
+  return c;
+}
+
+// ─── 1: Breakpoint Visualizer ───────────────────────────────
+const BPS = [
+  { w: 0,    label: 'xs',  name: '<640px' },
+  { w: 640,  label: 'sm',  name: '640px+' },
+  { w: 768,  label: 'md',  name: '768px+' },
+  { w: 1024, label: 'lg',  name: '1024px+' },
+  { w: 1280, label: 'xl',  name: '1280px+' },
+];
+
+function updateBreakpointViz() {
+  const vw = window.innerWidth;
+  const maxVw = 1600;
+  const pct = Math.min(100, (vw / maxVw) * 100);
+
+  $('bpFill').style.width = pct + '%';
+  $('bpLabel').textContent = vw + 'px';
+
+  const badges = document.querySelectorAll('.bp-badge');
+  let currentLabel = 'xs';
+  badges.forEach(b => {
+    const bpW = +b.dataset.bp;
+    if (vw >= bpW) { b.classList.add('current'); currentLabel = b.textContent.split(' ')[0]; }
+    else           { b.classList.remove('current'); }
+  });
+
+  const info = $('bpInfo');
+  info.innerHTML = '';
+  info.appendChild(chip('viewport width', vw + 'px'));
+  info.appendChild(chip('breakpoint', currentLabel));
+  info.appendChild(chip('1vw', (vw/100).toFixed(1) + 'px'));
+}
+
+window.addEventListener('resize', updateBreakpointViz);
+updateBreakpointViz();
+
+// ─── Simulated viewport ──────────────────────────────────────
+function updateSim(w) {
+  w = +w;
+  $('simWidthVal').textContent = w + 'px';
+  $('simWidth').value = w;
+
+  const wrap = $('simFrameWrap');
+  wrap.style.width = Math.min(w, wrap.parentElement.offsetWidth) + 'px';
+
+  // Nav
+  const links = $('simNavLinks');
+  const hamburger = $('simHamburger');
+  if (w < 480) {
+    links.style.display = 'none';
+    hamburger.style.display = 'block';
+  } else {
+    links.style.display = 'flex';
+    hamburger.style.display = 'none';
+  }
+
+  // Grid columns
+  const grid = $('simGrid');
+  if (w >= 1024) { grid.style.gridTemplateColumns = 'repeat(3,1fr)'; }
+  else if (w >= 640) { grid.style.gridTemplateColumns = 'repeat(2,1fr)'; }
+  else { grid.style.gridTemplateColumns = '1fr'; }
+
+  // Heading size
+  const h1 = $('simH1');
+  const sizePx = Math.max(16, Math.min(36, w * 0.04));
+  h1.style.fontSize = sizePx + 'px';
+}
+
+$('simWidth').addEventListener('input', e => updateSim(e.target.value));
+document.querySelectorAll('[data-w]').forEach(btn => {
+  btn.addEventListener('click', () => updateSim(btn.dataset.w));
+});
+updateSim(375);
+
+// ─── 2: clamp() visualizer ─────────────────────────────────
+function calcClamp() {
+  const minPx = +$('clampMin').value;
+  const maxPx = +$('clampMax').value;
+  const vw    = +$('clampVw').value;
+  const vpPx  = +$('clampVp').value;
+
+  const minRem = (minPx/16).toFixed(2);
+  const maxRem = (maxPx/16).toFixed(2);
+
+  $('clampMinVal').textContent = minRem + 'rem';
+  $('clampMaxVal').textContent = maxRem + 'rem';
+  $('clampVwVal').textContent  = vw + 'vw';
+  $('clampVpVal').textContent  = vpPx + 'px';
+
+  const preferred = vpPx * vw / 100;
+  const result    = Math.max(minPx, Math.min(maxPx, preferred));
+
+  // Update bar
+  const maxVp = 1400;
+  const minVpFrac = minPx / (vw/100) / maxVp;  // vp at which preferred = min
+  const maxVpFrac = maxPx / (vw/100) / maxVp;  // vp at which preferred = max
+  const curFrac   = vpPx / maxVp;
+
+  const bar = $('clampBar');
+  $('clampMinZone').style.width  = (minVpFrac * 100).toFixed(1) + '%';
+  $('clampMaxZone').style.left   = (maxVpFrac * 100).toFixed(1) + '%';
+  $('clampFlexZone').style.left  = (minVpFrac * 100).toFixed(1) + '%';
+  $('clampFlexZone').style.width = ((maxVpFrac - minVpFrac) * 100).toFixed(1) + '%';
+  $('clampIndicator').style.left = (curFrac * 100).toFixed(1) + '%';
+  $('clampResult').textContent   = result.toFixed(0) + 'px';
+
+  // Update code
+  $('codeClampMin').textContent  = minRem + 'rem';
+  $('codeClampMax').textContent  = maxRem + 'rem';
+  $('codeClampVw').textContent   = vw + 'vw';
+  $('codeClampVp').textContent   = vpPx + 'px';
+  $('codeClampPref').textContent = preferred.toFixed(0) + 'px';
+  $('codeClampRes').textContent  = result.toFixed(0) + 'px';
+
+  // Live preview
+  $('clampPreviewText').style.fontSize = result + 'px';
+
+  // Region label
+  let region = 'flexible (preferred)';
+  if (preferred < minPx) region = 'clamped to min';
+  if (preferred > maxPx) region = 'clamped to max';
+
+  const info = $('clampInfo');
+  info.innerHTML = '';
+  info.appendChild(chip('viewport', vpPx + 'px'));
+  info.appendChild(chip('preferred (vw)', preferred.toFixed(1) + 'px'));
+  info.appendChild(chip('result', result.toFixed(1) + 'px'));
+  info.appendChild(chip('region', region));
+}
+
+['clampMin','clampMax','clampVw','clampVp'].forEach(id => {
+  $(id).addEventListener('input', calcClamp);
+});
+calcClamp();
+
+// ─── 3: Fluid Type Scale ────────────────────────────────────
+const TYPE_SCALE = [
+  { name: '--text-xs',   minR: 0.75,  vw: 1.5, maxR: 0.875, label: 'xs' },
+  { name: '--text-sm',   minR: 0.875, vw: 2,   maxR: 1,     label: 'sm' },
+  { name: '--text-base', minR: 1,     vw: 2.5, maxR: 1.125, label: 'base' },
+  { name: '--text-lg',   minR: 1.125, vw: 3,   maxR: 1.25,  label: 'lg' },
+  { name: '--text-xl',   minR: 1.25,  vw: 3.5, maxR: 1.5,   label: 'xl' },
+  { name: '--text-2xl',  minR: 1.5,   vw: 4,   maxR: 2,     label: '2xl' },
+  { name: '--text-3xl',  minR: 1.875, vw: 5,   maxR: 2.5,   label: '3xl' },
+  { name: '--text-4xl',  minR: 2.25,  vw: 6,   maxR: 3.5,   label: '4xl' },
+];
+
+function renderTypeScale() {
+  const vp = +$('typeVp').value;
+  $('typeVpVal').textContent = vp + 'px';
+
+  const demo = $('typeScaleDemo');
+  demo.innerHTML = '';
+
+  TYPE_SCALE.forEach(t => {
+    const preferred = vp * t.vw / 100;
+    const result    = Math.max(t.minR * 16, Math.min(t.maxR * 16, preferred));
+    const resultRem = (result / 16).toFixed(3);
+
+    const row = document.createElement('div');
+    row.className = 'type-scale-row';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'type-scale-label';
+    lbl.textContent = t.name;
+
+    const val = document.createElement('div');
+    val.className = 'type-scale-val';
+    val.textContent = resultRem + 'rem';
+
+    const sample = document.createElement('div');
+    sample.className = 'type-scale-sample';
+    sample.textContent = 'The quick brown fox';
+    sample.style.fontSize = result + 'px';
+    sample.style.color = result > t.minR * 16 && result < t.maxR * 16
+      ? 'var(--text)'
+      : result <= t.minR * 16 ? 'var(--accent)' : 'var(--accent2)';
+
+    row.appendChild(lbl);
+    row.appendChild(val);
+    row.appendChild(sample);
+    demo.appendChild(row);
+  });
+}
+
+$('typeVp').addEventListener('input', renderTypeScale);
+renderTypeScale();
+
+// ─── 4: Container Queries ───────────────────────────────────
+function updateCq() {
+  const leftPct = +$('cqLeft').value;
+  $('cqLeftVal').textContent = leftPct + '%';
+  $('cqLayout').style.gridTemplateColumns = `${leftPct}fr ${100-leftPct}fr`;
+
+  requestAnimationFrame(() => {
+    const w1 = $('cqCol1').offsetWidth;
+    const w2 = $('cqCol2').offsetWidth;
+    $('cqInd1').textContent = `container: ${w1}px ${w1 >= 300 ? '→ horizontal' : '→ stacked'}`;
+    $('cqInd2').textContent = `container: ${w2}px ${w2 >= 300 ? '→ horizontal' : '→ stacked'}`;
+  });
+}
+
+$('cqLeft').addEventListener('input', updateCq);
+updateCq();
+window.addEventListener('resize', updateCq);
+
+// ─── 5: @layer demo ────────────────────────────────────────
+let layerState = { comp: false, util: false };
+
+function updateLayer() {
+  const el = $('layerEl');
+  el.classList.toggle('card-el',       layerState.comp);
+  el.classList.toggle('text-accent',   layerState.util);
+
+  $('layerComp').classList.toggle('active', layerState.comp);
+  $('layerUtil').classList.toggle('active', layerState.util);
+
+  let winner = 'base layer — color: #666';
+  if (layerState.comp && !layerState.util) winner = 'components layer — card style wins over base';
+  if (layerState.util) winner = 'utilities layer — text-accent wins over everything (regardless of specificity)';
+
+  $('layerStatus').textContent = 'Winning layer: ' + winner;
+}
+
+$('layerBase').addEventListener('click', () => {
+  // base always on
+  updateLayer();
+});
+
+$('layerComp').addEventListener('click', () => {
+  layerState.comp = !layerState.comp;
+  updateLayer();
+});
+
+$('layerUtil').addEventListener('click', () => {
+  layerState.util = !layerState.util;
+  updateLayer();
+});
+
+updateLayer();
+
+// ─── 6: Viewport units readout ─────────────────────────────
+function updateVpUnits() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  $('vwVal').textContent  = (vw/100).toFixed(1)  + 'px';
+  $('vw50Val').textContent = (vw/2).toFixed(0)    + 'px';
+  $('vhVal').textContent  = (vh/100).toFixed(1)   + 'px';
+  $('vh100Val').textContent = vh + 'px';
+}
+window.addEventListener('resize', updateVpUnits);
+updateVpUnits();
+</script>
+</body>
+</html>

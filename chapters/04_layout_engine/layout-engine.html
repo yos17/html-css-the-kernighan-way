@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Build Your Own Layout Engine — Chapter 4</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE LIBRARY: miniLayout
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ─── Flex container ─────────────────────────────────────────────────  */
+    .flex          { display: flex; }
+    .flex-col      { display: flex; flex-direction: column; }
+    .flex-wrap     { flex-wrap: wrap; }
+    .flex-1        { flex: 1; }
+    .flex-none     { flex: none; }
+    .flex-shrink-0 { flex-shrink: 0; }
+
+    /* ─── Flex main axis ─────────────────────────────────────────────────  */
+    .justify-start   { justify-content: flex-start; }
+    .justify-end     { justify-content: flex-end; }
+    .justify-center  { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-around  { justify-content: space-around; }
+    .justify-evenly  { justify-content: space-evenly; }
+
+    /* ─── Flex cross axis ────────────────────────────────────────────────  */
+    .items-start    { align-items: flex-start; }
+    .items-end      { align-items: flex-end; }
+    .items-center   { align-items: center; }
+    .items-baseline { align-items: baseline; }
+    .items-stretch  { align-items: stretch; }
+
+    /* ─── Self alignment ─────────────────────────────────────────────────  */
+    .self-start  { align-self: flex-start; }
+    .self-end    { align-self: flex-end; }
+    .self-center { align-self: center; }
+
+    /* ─── Grid container ─────────────────────────────────────────────────  */
+    .grid         { display: grid; }
+    .grid-cols-1  { grid-template-columns: repeat(1, 1fr); }
+    .grid-cols-2  { grid-template-columns: repeat(2, 1fr); }
+    .grid-cols-3  { grid-template-columns: repeat(3, 1fr); }
+    .grid-cols-4  { grid-template-columns: repeat(4, 1fr); }
+    .grid-auto-sm { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .grid-auto-md { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+
+    /* ─── Grid placement ─────────────────────────────────────────────────  */
+    .col-span-2   { grid-column: span 2; }
+    .col-span-full{ grid-column: 1 / -1; }
+    .place-center { display: grid; place-items: center; }
+
+    /* ─── Gap ────────────────────────────────────────────────────────────  */
+    .gap-1 { gap: 0.25rem; }
+    .gap-2 { gap: 0.5rem;  }
+    .gap-4 { gap: 1rem;    }
+    .gap-6 { gap: 1.5rem;  }
+    .gap-8 { gap: 2rem;    }
+
+    /* ─── Composition patterns ───────────────────────────────────────────  */
+    .cluster  { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .stack    { display: flex; flex-direction: column; gap: 1rem; }
+    .ml-auto  { margin-left: auto; }
+
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       THE APPLICATION — demo UI
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0d0d1a;
+      color: #c8c8d8;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    h1.page-title { color: #a8d8ea; font-size: 1.3em; margin-bottom: 4px; font-weight: 700; }
+    .subtitle { color: #555; font-size: 0.85em; margin-bottom: 28px; }
+
+    /* Category tabs */
+    .tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      padding: 5px 12px; border-radius: 4px; cursor: pointer;
+      font-family: 'Courier New', monospace; font-size: 0.82em;
+      border: 1px solid #333; background: #1a1a2e; color: #888;
+      transition: all 0.15s;
+    }
+    .tab.active { background: #0f3460; color: #a8d8ea; border-color: #a8d8ea; }
+
+    /* Demo canvas */
+    .demo-canvas {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 16px;
+      min-height: 200px;
+    }
+
+    /* Class builder */
+    .builder {
+      background: #070710;
+      border: 1px solid #1a1a30;
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+    .builder-header { font-size: 0.75em; color: #555; margin-bottom: 10px; }
+    .builder-pills  { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .pill {
+      padding: 3px 10px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #666; cursor: pointer;
+      font-family: 'Courier New', monospace; font-size: 0.78em;
+      transition: all 0.15s;
+    }
+    .pill.on { background: #0d2a3a; color: #7ec8e3; border-color: #7ec8e3; }
+    .code-output {
+      background: #0a0a18; border: 1px solid #1a1a2a;
+      border-radius: 4px; padding: 8px 12px;
+      font-size: 0.80em; color: #a8d8ea;
+      font-family: 'Courier New', monospace;
+      min-height: 32px;
+    }
+
+    /* Demo items */
+    .box {
+      background: #1a3a5a;
+      border: 1px solid #2a5a8a;
+      border-radius: 4px;
+      padding: 10px 14px;
+      color: #a8d8ea;
+      font-size: 0.80em;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .box.tall { min-height: 80px; }
+    .box.wide { min-width: 120px; }
+    .box-label { font-size: 0.72em; color: #555; margin-top: 4px; text-align: center; }
+
+    /* Property reference table */
+    .ref-table {
+      background: #070710; border: 1px solid #1a1a30; border-radius: 6px; overflow: hidden;
+    }
+    .ref-row {
+      display: grid; grid-template-columns: 200px 180px 1fr;
+      gap: 12px; padding: 9px 14px; border-bottom: 1px solid #111128;
+      font-size: 0.80em; align-items: start;
+    }
+    .ref-row:last-child { border-bottom: none; }
+    .ref-row:hover { background: #0f0f20; }
+    .ref-prop { color: #a8d8ea; }
+    .ref-val  { color: #7ec87e; }
+    .ref-desc { color: #666; }
+  </style>
+</head>
+<body>
+  <h1 class="page-title">Build Your Own Layout Engine</h1>
+  <p class="subtitle">Chapter 4 — Flexbox, CSS Grid, fr units, and composable layout patterns</p>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="showDemo('flex')">Flexbox</button>
+    <button class="tab" onclick="showDemo('grid')">Grid</button>
+    <button class="tab" onclick="showDemo('patterns')">Patterns</button>
+    <button class="tab" onclick="showDemo('ref')">Reference</button>
+  </div>
+
+  <!-- Flex demo -->
+  <div id="demoFlex">
+    <div class="builder">
+      <div class="builder-header">Container classes — click to toggle</div>
+      <div class="builder-pills" id="flexPills"></div>
+      <div class="code-output" id="flexCode">class=""</div>
+    </div>
+    <div class="demo-canvas" id="flexCanvas"></div>
+  </div>
+
+  <!-- Grid demo -->
+  <div id="demoGrid" style="display:none">
+    <div class="builder">
+      <div class="builder-header">Grid classes — click to toggle</div>
+      <div class="builder-pills" id="gridPills"></div>
+      <div class="code-output" id="gridCode">class=""</div>
+    </div>
+    <div class="demo-canvas" id="gridCanvas"></div>
+  </div>
+
+  <!-- Patterns demo -->
+  <div id="demoPatterns" style="display:none">
+    <div class="demo-canvas" id="patternsCanvas"></div>
+  </div>
+
+  <!-- Reference -->
+  <div id="demoRef" style="display:none">
+    <div class="ref-table" id="refTable"></div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  THE DATA
+// ═══════════════════════════════════════════════════════════════════════
+
+const FLEX_CLASSES = {
+  'Direction':  ['flex', 'flex-col'],
+  'Main axis':  ['justify-start', 'justify-center', 'justify-end', 'justify-between', 'justify-evenly'],
+  'Cross axis': ['items-start', 'items-center', 'items-end', 'items-stretch', 'items-baseline'],
+  'Wrap':       ['flex-wrap'],
+  'Gap':        ['gap-2', 'gap-4', 'gap-8'],
+};
+
+const GRID_CLASSES = {
+  'Columns':    ['grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'],
+  'Auto':       ['grid-auto-sm', 'grid-auto-md'],
+  'Gap':        ['gap-2', 'gap-4', 'gap-8'],
+  'Centering':  ['place-center'],
+};
+
+const PATTERNS = [
+  {
+    name: 'Sidebar layout',
+    desc: 'Sidebar collapses below main content when viewport is narrow',
+    html: `<div style="display:flex;flex-wrap:wrap;gap:12px">
+      <div class="box" style="flex-basis:140px;flex-grow:1;background:#1a2a3a">Sidebar<br><small style="color:#555">flex-basis:140px</small></div>
+      <div class="box" style="flex-basis:0;flex-grow:999;min-width:50%;background:#1a3a2a">Main content<br><small style="color:#555">flex-grow:999, min-width:50%</small></div>
+    </div>`
+  },
+  {
+    name: 'Centered hero',
+    desc: 'Content centered both horizontally and vertically',
+    html: `<div class="place-center" style="height:160px;background:#0d1a0d;border-radius:6px">
+      <div style="text-align:center">
+        <div style="font-size:1.4em;color:#a8d8ea;font-weight:700">Hero Title</div>
+        <div style="color:#555;font-size:0.85em;margin-top:4px">place-items: center</div>
+      </div>
+    </div>`
+  },
+  {
+    name: 'Split header (flex-split)',
+    desc: 'Logo left, nav right — using margin-left: auto',
+    html: `<div class="flex items-center" style="background:#0a0a18;padding:12px 16px;border-radius:6px;border:1px solid #1a1a30">
+      <div class="box" style="padding:6px 12px">Logo</div>
+      <div class="flex gap-4 ml-auto">
+        <a style="color:#a8d8ea;font-size:0.82em">Home</a>
+        <a style="color:#a8d8ea;font-size:0.82em">Docs</a>
+        <a style="color:#a8d8ea;font-size:0.82em">GitHub</a>
+      </div>
+    </div>`
+  },
+  {
+    name: 'Cluster (tag cloud)',
+    desc: 'Items wrap naturally, maintaining consistent gap',
+    html: `<div class="cluster" style="padding:12px;background:#0a0a18;border-radius:6px">
+      ${['CSS', 'Grid', 'Flexbox', 'Layout', 'Responsive', 'fr units', 'auto-fill', 'minmax', 'place-items'].map(t =>
+        `<span style="background:#1a3a5a;color:#a8d8ea;padding:4px 12px;border-radius:12px;font-size:0.8em;border:1px solid #2a5a8a">${t}</span>`
+      ).join('')}
+    </div>`
+  },
+  {
+    name: 'Auto-responsive grid',
+    desc: 'Columns collapse automatically — no media queries',
+    html: `<div class="grid-auto-sm gap-4" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">
+      ${[1,2,3,4,5,6].map(n => `<div class="box">Card ${n}</div>`).join('')}
+    </div>`
+  },
+];
+
+const REFERENCE = [
+  { prop: 'display: flex',           val: '',                              desc: 'Creates a flex container; children become flex items' },
+  { prop: 'flex-direction',          val: 'row | column',                  desc: 'Sets the main axis; row = horizontal, column = vertical' },
+  { prop: 'justify-content',         val: 'start | center | between | …', desc: 'Distributes items along the main axis' },
+  { prop: 'align-items',             val: 'start | center | stretch | …', desc: 'Aligns items on the cross axis' },
+  { prop: 'flex-wrap',               val: 'wrap | nowrap',                 desc: 'Whether items wrap to a new line when they overflow' },
+  { prop: 'gap',                     val: '<length>',                      desc: 'Space between flex/grid items (not at edges)' },
+  { prop: 'flex: 1',                 val: '1 1 0%',                        desc: 'Item grows to fill space and can shrink; basis is 0' },
+  { prop: 'margin-left: auto',       val: '',                              desc: 'Absorbs all free space on the main axis — pushes item right' },
+  { prop: 'display: grid',           val: '',                              desc: 'Creates a grid container' },
+  { prop: 'grid-template-columns',   val: 'repeat(3, 1fr)',                desc: 'Defines column tracks; fr = fraction of available space' },
+  { prop: 'auto-fill',               val: 'minmax(200px, 1fr)',            desc: 'Creates as many columns as fit; empty columns kept' },
+  { prop: 'auto-fit',                val: 'minmax(200px, 1fr)',            desc: 'Creates as many columns as fit; empty columns collapse' },
+  { prop: 'grid-column: span N',     val: '',                              desc: 'Item spans N column tracks' },
+  { prop: 'grid-column: 1 / -1',     val: '',                              desc: 'Item spans all columns (-1 = last line)' },
+  { prop: 'place-items: center',     val: '',                              desc: 'Grid shorthand: align-items + justify-items both = center' },
+];
+
+// ─── Flex builder ─────────────────────────────────────────────────────
+
+let flexActive = new Set(['flex']);
+let gridActive = new Set(['grid', 'grid-cols-3', 'gap-4']);
+
+function buildPills(groups, active, pillsId, codeId, canvasId, updateFn) {
+  const container = document.getElementById(pillsId);
+  container.innerHTML = '';
+
+  Object.entries(groups).forEach(([groupName, classes]) => {
+    const label = document.createElement('span');
+    label.style.cssText = 'font-size:0.7em;color:#444;align-self:center;white-space:nowrap';
+    label.textContent = groupName + ':';
+    container.appendChild(label);
+
+    classes.forEach(cls => {
+      const btn = document.createElement('button');
+      btn.className = 'pill' + (active.has(cls) ? ' on' : '');
+      btn.textContent = '.' + cls;
+      btn.onclick = () => {
+        if (active.has(cls)) active.delete(cls);
+        else active.add(cls);
+        updateFn();
+      };
+      container.appendChild(btn);
+    });
+  });
+}
+
+function updateFlex() {
+  // Re-render pills
+  buildPills(FLEX_CLASSES, flexActive, 'flexPills', 'flexCode', 'flexCanvas', updateFlex);
+
+  const classes = [...flexActive].join(' ');
+  document.getElementById('flexCode').textContent = `class="${classes}"`;
+
+  const canvas = document.getElementById('flexCanvas');
+  canvas.innerHTML = '';
+  const container = document.createElement('div');
+  container.className = classes;
+  container.style.cssText = 'background:#0a0a18;border-radius:6px;padding:12px;min-height:120px;border:1px dashed #2a2a4a';
+
+  const heights = [40, 70, 50, 60, 45];
+  ['A','B','C','D','E'].forEach((label, i) => {
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.style.minHeight = heights[i] + 'px';
+    box.textContent = label;
+    container.appendChild(box);
+  });
+
+  canvas.appendChild(container);
+}
+
+function updateGrid() {
+  buildPills(GRID_CLASSES, gridActive, 'gridPills', 'gridCode', 'gridCanvas', updateGrid);
+
+  const classes = [...gridActive].join(' ');
+  document.getElementById('gridCode').textContent = `class="${classes}"`;
+
+  const canvas = document.getElementById('gridCanvas');
+  canvas.innerHTML = '';
+  const container = document.createElement('div');
+  container.className = classes;
+  container.style.cssText = 'background:#0a0a18;border-radius:6px;padding:12px;min-height:120px;border:1px dashed #2a2a4a';
+
+  for (let i = 1; i <= 8; i++) {
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.textContent = i;
+    container.appendChild(box);
+  }
+  canvas.appendChild(container);
+}
+
+function renderPatterns() {
+  const canvas = document.getElementById('patternsCanvas');
+  canvas.innerHTML = '';
+  PATTERNS.forEach(p => {
+    const section = document.createElement('div');
+    section.style.marginBottom = '20px';
+    section.innerHTML = `
+      <div style="font-size:0.80em;color:#a8d8ea;margin-bottom:4px;font-weight:600">${p.name}</div>
+      <div style="font-size:0.72em;color:#555;margin-bottom:8px">${p.desc}</div>
+      ${p.html}
+    `;
+    canvas.appendChild(section);
+  });
+}
+
+function renderRef() {
+  const table = document.getElementById('refTable');
+  table.innerHTML = '';
+  REFERENCE.forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'ref-row';
+    div.innerHTML = `
+      <span class="ref-prop">${escHtml(row.prop)}</span>
+      <span class="ref-val">${escHtml(row.val)}</span>
+      <span class="ref-desc">${escHtml(row.desc)}</span>
+    `;
+    table.appendChild(div);
+  });
+}
+
+function showDemo(name) {
+  ['flex','grid','patterns','ref'].forEach(d => {
+    document.getElementById('demo' + d.charAt(0).toUpperCase() + d.slice(1)).style.display =
+      d === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['flex','grid','patterns','ref'][i] === name);
+  });
+  if (name === 'patterns') renderPatterns();
+  if (name === 'ref') renderRef();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+buildPills(FLEX_CLASSES, flexActive, 'flexPills', 'flexCode', 'flexCanvas', updateFlex);
+updateFlex();
+buildPills(GRID_CLASSES, gridActive, 'gridPills', 'gridCode', 'gridCanvas', updateGrid);
+updateGrid();
+</script>
+</body>
+</html>
